@@ -1,5 +1,7 @@
 # stand-up
 
+🔗 **Web:** [bendi.dev/stand-up](https://bendi.dev/stand-up/)
+
 Inglés para el trabajo, de A1 a C1: reuniones, entrevistas, correos, temas técnicos y expresiones que se usan de verdad en la empresa. Lectura fácil, audio en cada frase y a tu ritmo, accesible también para personas con dislexia.
 
 > *Stand-up* es la reunión corta diaria de los equipos ágiles: ayer, hoy y bloqueos. Aquí aprendes el inglés para esa reunión… y para todas las demás.
