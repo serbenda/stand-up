@@ -45,7 +45,7 @@
     set(k, v) { try { localStorage.setItem("su2." + k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } }
   };
 
-  const DEFAULTS = { theme: "dark", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", rate: 0.95, autoplay: true, highlight: true, ruler: false };
+  const DEFAULTS = { theme: "dark", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", voiceName: "", rate: 0.95, autoplay: true, highlight: true, ruler: false };
   const settings = Object.assign({}, DEFAULTS, store.get("settings", {}));
   const prog = Object.assign({ lessons: {}, seen: {}, xp: 0, log: {} }, store.get("progress", {}));
   const saveProg = () => store.set("progress", prog);
@@ -75,26 +75,62 @@
   /* ═════════════ Voz ═════════════ */
   const synth = window.speechSynthesis;
   let voices = [];
-  const loadVoices = () => { voices = synth ? synth.getVoices() : []; };
-  if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+  const voiceWaiters = [];
+  const loadVoices = () => {
+    voices = synth ? synth.getVoices() : [];
+    if (voices.length) { voiceWaiters.splice(0).forEach(fn => fn()); refreshVoiceSelect(); }
+  };
+  if (synth) { synth.addEventListener ? synth.addEventListener("voiceschanged", loadVoices) : (synth.onvoiceschanged = loadVoices); }
+
+  // Las voces llegan tarde en Chrome: esperamos un poco antes de hablar
+  const voicesReady = () => new Promise(res => {
+    if (voices.length) return res();
+    voiceWaiters.push(res);
+    setTimeout(res, 1500);
+  });
+
+  // Voces de efectos de macOS y similares: nunca para enseñar inglés
+  const NOVELTY = /^(albert|bahh|bells|boing|bubbles|cellos|good news|bad news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|ralph|kathy|grandma|grandpa|rocko|shelley|sandy|flo|eddy|reed|burbujas|campanas|buenas noticias|malas noticias|buf[oó]n|[oó]rgano|superestrella|susurro|violonchelos)\b/i;
+
+  // Orden de preferencia: voces naturales en la nube, luego las mejores del sistema
+  const PREFERRED = {
+    "en-GB": [/sonia.*natural|libby.*natural|ryan.*natural|natural.*united kingdom/i, /google uk english female/i, /google uk english male/i, /daniel.*(premium|enhanced|mejorada)/i, /serena|kate|arthur|martha|stephanie/i, /^daniel/i],
+    "en-US": [/aria.*natural|jenny.*natural|guy.*natural|ava.*natural|andrew.*natural|natural.*united states/i, /google us english/i, /(ava|zoe|evan|nathan|allison|samantha).*(premium|enhanced|mejorada)/i, /^ava\b|^allison|^tom\b|^nathan|^zoe|^evan/i, /^samantha/i, /^alex\b/i]
+  };
+
+  const englishVoices = () => voices.filter(v => /^en[-_]/i.test(v.lang || "") && !NOVELTY.test(v.name));
+
+  function rankVoice(v, lang) {
+    const prefs = PREFERRED[lang] || [];
+    const i = prefs.findIndex(re => re.test(v.name));
+    let score = i === -1 ? 50 : i;
+    if (v.lang.replace("_", "-").toLowerCase() !== lang.toLowerCase()) score += 20;
+    if (/natural|neural|premium|enhanced|mejorada/i.test(v.name)) score -= 5;
+    return score;
+  }
 
   function pickVoice(lang) {
-    const exact = voices.filter(v => v.lang && v.lang.replace("_", "-").toLowerCase() === lang.toLowerCase());
-    const pool = exact.length ? exact : voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
-    const good = /natural|neural|google|premium|enhanced|samantha|daniel|serena|libby|sonia|aria|jenny/i;
-    return pool.find(v => good.test(v.name)) || pool[0] || null;
+    const en = englishVoices();
+    if (settings.voiceName) { const chosen = en.find(v => v.name === settings.voiceName); if (chosen) return chosen; }
+    return en.slice().sort((a, b) => rankVoice(a, lang) - rankVoice(b, lang))[0] || null;
   }
+
+  if (synth) loadVoices(); // después de definir todo lo que usa
 
   let speakingEl = null;
   const clearHighlight = () => { if (speakingEl) $$(".w.on", speakingEl).forEach(w => w.classList.remove("on")); speakingEl = null; };
+  let warnedNoVoice = false;
 
-  function speak(text, el, slow) {
+  async function speak(text, el, slow) {
     if (!synth) { toast("Este navegador no tiene voces"); return; }
     synth.cancel(); clearHighlight();
+    await voicesReady();
+    const v = pickVoice(settings.accent);
+    if (!v && !warnedNoVoice) { warnedNoVoice = true; toast("No hay voz en inglés instalada: mira Ajustes de lectura → Voz"); }
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = settings.accent;
-    const v = pickVoice(settings.accent); if (v) u.voice = v;
-    u.rate = slow ? Math.max(0.5, settings.rate * 0.65) : settings.rate;
+    u.lang = v ? v.lang : settings.accent;
+    if (v) u.voice = v;
+    u.rate = slow ? Math.max(0.55, settings.rate * 0.75) : settings.rate;
     if (el && settings.highlight) {
       speakingEl = el;
       const words = $$(".w", el);
@@ -116,7 +152,7 @@
   }
 
   const audioBtns = (id, big) => `<button class="audio-btn${big ? " big" : ""}" data-say="${id}" aria-label="Escuchar">${ICON.play}</button>
-    <button class="audio-btn slow" data-say-slow="${id}" aria-label="Escuchar despacio">0.6×</button>`;
+    <button class="audio-btn slow" data-say-slow="${id}" aria-label="Escuchar despacio">0.75×</button>`;
 
   /* ═════════════ Ajustes ═════════════ */
   const root = document.documentElement;
@@ -132,11 +168,28 @@
     ["theme", "font", "size", "spacing", "accent"].forEach(n => { const i = $(`input[name="${n}"][value="${settings[n]}"]`, f); if (i) i.checked = true; });
     f.rate.value = settings.rate;
     ["autoplay", "highlight", "ruler"].forEach(n => { f[n].checked = !!settings[n]; });
+    refreshVoiceSelect();
   }
   $("#settings form").addEventListener("input", e => {
     const t = e.target; if (!t.name) return;
     setSetting(t.name, t.type === "checkbox" ? t.checked : t.type === "range" ? parseFloat(t.value) : t.value);
+    if (t.name === "accent") refreshVoiceSelect();
   });
+
+  // Selector de voz: «Automática» o cualquier voz inglesa instalada (sin las de efectos)
+  function refreshVoiceSelect() {
+    const sel = document.getElementById("voice-select");
+    if (!sel) return;
+    const en = englishVoices().sort((a, b) => rankVoice(a, settings.accent) - rankVoice(b, settings.accent));
+    const auto = pickVoice(settings.accent);
+    const current = settings.voiceName && en.some(v => v.name === settings.voiceName) ? settings.voiceName : "";
+    sel.innerHTML = `<option value="">Automática${auto && !settings.voiceName ? ` (${esc(auto.name)})` : ""}</option>` +
+      en.map(v => `<option value="${esc(v.name)}" ${v.name === current ? "selected" : ""}>${esc(v.name)} · ${esc(v.lang)}</option>`).join("");
+    const hint = document.getElementById("voice-hint");
+    if (hint) hint.hidden = en.some(v => /natural|google|premium|enhanced|mejorada/i.test(v.name));
+  }
+  document.getElementById("voice-select").addEventListener("change", e => { setSetting("voiceName", e.target.value); });
+  document.getElementById("voice-test").addEventListener("click", () => speak("Quick update: the cache is in the queue. Let's take it offline.", null, false));
   const openSettings = () => { syncSettingsForm(); $("#settings").showModal(); };
   $("#open-settings").addEventListener("click", openSettings);
   document.addEventListener("pointermove", e => { if (settings.ruler) $("#ruler").style.top = e.clientY + "px"; }, { passive: true });
@@ -403,7 +456,7 @@ cd: no such file or directory</pre>
   }
 
   const speakBtns = (text, big) => `<button class="audio-btn${big ? " big" : ""}" data-speak="${esc(text)}" aria-label="Escuchar">${ICON.play}</button>
-    <button class="audio-btn slow" data-speak="${esc(text)}" data-slow aria-label="Escuchar despacio">0.6×</button>`;
+    <button class="audio-btn slow" data-speak="${esc(text)}" data-slow aria-label="Escuchar despacio">0.75×</button>`;
 
   /* ── Pronunciación ── */
   const sayState = { cat: null, q: "" };

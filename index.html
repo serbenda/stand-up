@@ -100,6 +100,12 @@
           <label class="opt"><input type="radio" name="accent" value="en-GB"> Británica</label>
           <label class="opt"><input type="radio" name="accent" value="en-US"> Americana</label>
         </div>
+        <label class="voice-pick">
+          <span class="sr-only">Voz concreta</span>
+          <select id="voice-select" aria-label="Voz concreta"></select>
+          <button type="button" class="btn btn-ghost" id="voice-test">Probar</button>
+        </label>
+        <p class="voice-hint" id="voice-hint" hidden>Tu sistema solo tiene voces básicas. Para que suene natural, usa Chrome o Edge, o instala una voz inglesa de calidad: en Mac, Ajustes del Sistema → Accesibilidad → Contenido leído → Voz del sistema → Gestionar voces (por ejemplo «Daniel (mejorada)» o «Ava (Premium)»); en Windows, Configuración → Hora e idioma → Voz.</p>
         <label class="range">
           <span>Velocidad</span>
           <input type="range" name="rate" min="0.6" max="1.2" step="0.05">
