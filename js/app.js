@@ -45,7 +45,7 @@
     set(k, v) { try { localStorage.setItem("su2." + k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } }
   };
 
-  const DEFAULTS = { theme: "light", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", rate: 0.95, autoplay: true, highlight: true, ruler: false };
+  const DEFAULTS = { theme: "dark", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", rate: 0.95, autoplay: true, highlight: true, ruler: false };
   const settings = Object.assign({}, DEFAULTS, store.get("settings", {}));
   const prog = Object.assign({ lessons: {}, seen: {}, xp: 0, log: {} }, store.get("progress", {}));
   const saveProg = () => store.set("progress", prog);
@@ -185,6 +185,28 @@
             ${live ? `<div class="foot-row"><div class="meter" aria-hidden="true"><span style="width:${p.total ? (p.done / p.total) * 100 : 0}%"></span></div><span class="meter-txt">${p.done}/${p.total} lecciones</span></div>` : ""}`;
           return live ? `<a class="route" href="#/r/${r.id}">${inner}</a>` : `<div class="route soon" aria-disabled="true">${inner}</div>`;
         }).join("")}
+      </div>
+
+      <div class="section-head">
+        <h2>Herramientas para el día a día</h2>
+        <span class="label">úsalas ya</span>
+      </div>
+      <div class="routes tools">
+        <a class="route" href="#/say">
+          <div class="top-row"><span class="label mono">$ say nginx</span></div>
+          <h3>Pronuncia bien los términos técnicos</h3>
+          <p>Cache, nginx, Azure, queue, deploy… ${TERMS.length} términos con audio y cómo se dicen de verdad.</p>
+        </a>
+        <a class="route" href="#/daily">
+          <div class="top-row"><span class="label mono">$ standup --build</span></div>
+          <h3>Prepara tu daily</h3>
+          <p>Elige qué hiciste ayer, qué harás hoy y tus bloqueos. Te lo montamos en inglés, listo para leer en voz alta.</p>
+        </a>
+        <a class="route" href="#/cheats">
+          <div class="top-row"><span class="label mono">$ cat cheatsheet.md</span></div>
+          <h3>Chuletas para copiar</h3>
+          <p>Comentarios de PR, Slack, correos, reuniones e incidencias. Copiar, pegar y listo.</p>
+        </a>
       </div>`;
   }
 
@@ -239,6 +261,262 @@
     const key = b.dataset.say || b.dataset.saySlow;
     const it = itemByKey[key];
     if (it) speak(it.en, b.closest(".phrase") && $(".en", b.closest(".phrase")), !!b.dataset.saySlow);
+  });
+
+  /* ═════════════ Herramientas ═════════════ */
+  const TERMS = window.TERMS || [], TERM_CATS = window.TERM_CATS || [];
+  const DAILY = window.DAILY || { yesterday: [], today: [], blockers: [] };
+  const CHEATS = window.CHEATS || [];
+
+  // Botones genéricos de audio y copiar: data-speak="texto", data-slow, data-copy="texto"
+  app.addEventListener("click", e => {
+    if (L) return;
+    const sp = e.target.closest("[data-speak]");
+    if (sp) { const host = sp.closest("[data-speak-host]"); speak(sp.dataset.speak, host && $(".speak-target", host), sp.hasAttribute("data-slow")); return; }
+    const cp = e.target.closest("[data-copy]");
+    if (cp) copyText(cp.dataset.copy, cp);
+  });
+
+  async function copyText(text, btn) {
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; }
+    catch (err) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select(); ok = document.execCommand("copy"); ta.remove();
+      } catch (e2) { ok = false; }
+    }
+    toast(ok ? "✓ copiado" : "No se pudo copiar: selecciona el texto a mano");
+    if (ok && btn) { const old = btn.innerHTML; btn.innerHTML = ICON.check; setTimeout(() => { btn.innerHTML = old; }, 1200); }
+  }
+
+  const speakBtns = (text, big) => `<button class="audio-btn${big ? " big" : ""}" data-speak="${esc(text)}" aria-label="Escuchar">${ICON.play}</button>
+    <button class="audio-btn slow" data-speak="${esc(text)}" data-slow aria-label="Escuchar despacio">0.6×</button>`;
+
+  /* ── Pronunciación ── */
+  const sayState = { cat: null, q: "" };
+
+  function renderSay() {
+    app.innerHTML = `
+      <nav class="crumbs" aria-label="Migas"><a href="#/">Inicio</a><span aria-hidden="true">/</span><span>pronunciación</span></nav>
+      <header class="route-head">
+        <span class="label mono">$ say --correctly</span>
+        <h1>Pronuncia bien los términos técnicos</h1>
+        <p class="lead">Palabras que se dicen mal durante años porque nadie te corrige. La sílaba fuerte va en MAYÚSCULAS y la pronunciación es aproximada, para leer «a la española».</p>
+      </header>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Categoría">
+          <button class="opt" data-term-cat="" aria-pressed="${!sayState.cat}">Todos</button>
+          ${TERM_CATS.map(c => `<button class="opt" data-term-cat="${c.id}" aria-pressed="${sayState.cat === c.id}">${esc(c.name)}</button>`).join("")}
+        </div>
+        <div class="search-box"><span class="mono prompt" aria-hidden="true">grep</span><input id="term-search" type="search" placeholder="cache, deploy…" value="${esc(sayState.q)}" aria-label="Buscar término" autocomplete="off"></div>
+      </div>
+      <div class="terms" id="terms"></div>`;
+    renderTerms();
+  }
+
+  function renderTerms() {
+    const q = sayState.q.trim().toLowerCase();
+    const list = TERMS.filter(t => (!sayState.cat || t.cat === sayState.cat) && (!q || t.term.toLowerCase().includes(q)));
+    $("#terms").innerHTML = list.length ? list.map(t => `
+      <article class="term" data-speak-host>
+        <div class="term-head">
+          <h3 class="speak-target" lang="en">${esc(t.term)}</h3>
+          <div class="term-audio">${speakBtns(t.say || t.term)}</div>
+        </div>
+        <p class="sounds"><span class="label">suena</span> ${esc(t.sounds)}</p>
+        ${t.wrong ? `<p class="wrong-say"><span class="label">no</span> ${esc(t.wrong)}</p>` : ""}
+        ${t.note ? `<p class="term-note">${esc(t.note)}</p>` : ""}
+      </article>`).join("") : `<p class="muted">Sin resultados. ¿Echas uno de menos? Propónlo en GitHub.</p>`;
+  }
+
+  app.addEventListener("click", e => {
+    const c = e.target.closest("[data-term-cat]");
+    if (!c) return;
+    sayState.cat = c.dataset.termCat || null;
+    $$("[data-term-cat]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.termCat || null) === sayState.cat)));
+    renderTerms();
+  });
+  app.addEventListener("input", e => {
+    if (e.target.id === "term-search") { sayState.q = e.target.value; renderTerms(); }
+    if (e.target.id === "cheat-search") { cheatState.q = e.target.value; renderCheatList(); }
+    if (e.target.dataset.role === "blank" && e.target.closest("[data-daily-line]")) dailyInput(e.target);
+  });
+
+  /* ── Constructor de daily ── */
+  const SECTIONS = [
+    { id: "yesterday", title: "Ayer", lead: "Yesterday, " },
+    { id: "today", title: "Hoy", lead: "Today, " },
+    { id: "blockers", title: "Bloqueos", lead: "" }
+  ];
+  const daily = Object.assign({
+    yesterday: [{ t: 0, v: [] }],
+    today: [{ t: 0, v: [] }],
+    blockers: [{ t: 0, v: [] }]
+  }, store.get("daily", {}));
+  const saveDaily = () => store.set("daily", daily);
+
+  const blanks = tpl => (tpl.match(/…/g) || []).length;
+
+  function fill(tpl, values, forDisplay) {
+    let i = 0;
+    let s = tpl.replace(/…/g, () => {
+      const v = (values[i++] || "").trim().replace(/[.!?]+$/, "");
+      return v ? (forDisplay ? `\u0001${v}\u0002` : v) : (forDisplay ? "\u0003" : "___");
+    });
+    if (!/[.!?]$/.test(s)) s += ".";
+    return s;
+  }
+
+  const addAlso = s => s.replace(/^I'll /, "I'll also ").replace(/^I'm /, "I'm also ").replace(/^I /, "I also ");
+
+  function composeDaily(forDisplay) {
+    const out = ["Quick update."];
+    SECTIONS.forEach(sec => {
+      daily[sec.id].forEach((line, i) => {
+        const tpl = DAILY[sec.id][line.t];
+        if (!tpl) return;
+        let s = fill(tpl, line.v, forDisplay);
+        if (i > 0 && sec.id !== "blockers") s = addAlso(s);
+        if (i === 0 && sec.lead && !/today|yesterday/i.test(s)) s = sec.lead + s;
+        out.push(s);
+      });
+    });
+    out.push("That's it from me.");
+    return out.join(" ");
+  }
+
+  function scriptHTML() {
+    return esc(composeDaily(true))
+      .replace(/\u0001/g, '<mark class="filled">').replace(/\u0002/g, "</mark>")
+      .replace(/\u0003/g, '<mark class="blank">___</mark>');
+  }
+
+  function renderDailyBuilder() {
+    app.innerHTML = `
+      <nav class="crumbs" aria-label="Migas"><a href="#/">Inicio</a><span aria-hidden="true">/</span><span>mi daily</span></nav>
+      <header class="route-head">
+        <span class="label mono">$ standup --build</span>
+        <h1>Prepara tu daily en inglés</h1>
+        <p class="lead">Elige una frase para cada parte y completa los huecos con el nombre de tu tarea, tal cual: «the Terraform module», «Ana's PR», «the DNS issue». Se guarda en este navegador para mañana.</p>
+      </header>
+      <div class="daily-grid">
+        <div class="daily-form">
+          ${SECTIONS.map(sec => `
+            <section class="daily-sec" aria-labelledby="ds-${sec.id}">
+              <h2 id="ds-${sec.id}">${sec.title}</h2>
+              <div id="lines-${sec.id}">${daily[sec.id].map((line, i) => lineHTML(sec.id, line, i)).join("")}</div>
+              <button class="btn btn-quiet" data-add-line="${sec.id}">+ Añadir otra</button>
+            </section>`).join("")}
+        </div>
+        <aside class="daily-out" aria-labelledby="out-title" data-speak-host>
+          <span class="label" id="out-title">tu daily</span>
+          <p class="script speak-target" lang="en" id="script">${scriptHTML()}</p>
+          <div class="out-actions">
+            <button class="btn btn-primary" data-daily-say>${ICON.play} Escuchar</button>
+            <button class="btn btn-ghost" data-daily-say data-slow>Despacio</button>
+            <button class="btn btn-ghost" data-daily-copy>Copiar</button>
+          </div>
+          <p class="hint-keys">Léelo en voz alta dos o tres veces antes de la reunión. Con eso basta.</p>
+        </aside>
+      </div>`;
+  }
+
+  function lineHTML(sec, line, i) {
+    const tpl = DAILY[sec][line.t] || DAILY[sec][0];
+    const n = blanks(tpl);
+    return `<div class="daily-line" data-daily-line data-sec="${sec}" data-i="${i}">
+      <select aria-label="Frase" data-role="tpl" lang="en">
+        ${DAILY[sec].map((t, k) => `<option value="${k}" ${k === line.t ? "selected" : ""}>${esc(t)}</option>`).join("")}
+      </select>
+      ${Array.from({ length: n }, (_, k) => `<input type="text" data-role="blank" data-k="${k}" lang="en" value="${esc(line.v[k] || "")}" placeholder="${k === 0 ? "the Terraform module" : "the DNS issue"}" aria-label="Hueco ${k + 1}" autocomplete="off" spellcheck="true">`).join("")}
+      ${daily[sec].length > 1 ? `<button class="icon-btn" data-remove-line aria-label="Quitar esta frase">${ICON.close}</button>` : ""}
+    </div>`;
+  }
+
+  function dailyInput(el) {
+    const row = el.closest("[data-daily-line]");
+    const sec = row.dataset.sec, i = +row.dataset.i;
+    const line = daily[sec][i];
+    if (el.dataset.role === "tpl") {
+      line.t = +el.value;
+      line.v = line.v.slice(0, blanks(DAILY[sec][line.t]));
+      row.outerHTML = lineHTML(sec, line, i);
+      const again = $(`[data-daily-line][data-sec="${sec}"][data-i="${i}"] input`);
+      if (again) again.focus();
+    } else {
+      line.v[+el.dataset.k] = el.value;
+    }
+    saveDaily();
+    $("#script").innerHTML = scriptHTML();
+  }
+
+  app.addEventListener("change", e => { if (e.target.dataset.role === "tpl") dailyInput(e.target); });
+
+  app.addEventListener("click", e => {
+    const add = e.target.closest("[data-add-line]");
+    if (add) {
+      const sec = add.dataset.addLine;
+      daily[sec].push({ t: Math.min(1, DAILY[sec].length - 1), v: [] });
+      saveDaily(); renderDailyBuilder();
+      const last = $$(`[data-daily-line][data-sec="${sec}"] select`).pop(); if (last) last.focus();
+      return;
+    }
+    const rm = e.target.closest("[data-remove-line]");
+    if (rm) {
+      const row = rm.closest("[data-daily-line]");
+      daily[row.dataset.sec].splice(+row.dataset.i, 1);
+      saveDaily(); renderDailyBuilder();
+      return;
+    }
+    const ds = e.target.closest("[data-daily-say]");
+    if (ds) { speak(composeDaily(false).replace(/___/g, "something"), null, ds.hasAttribute("data-slow")); return; }
+    if (e.target.closest("[data-daily-copy]")) copyText(composeDaily(false), e.target.closest("[data-daily-copy]"));
+  });
+
+  /* ── Chuletas ── */
+  const cheatState = { q: "" };
+
+  function renderCheats() {
+    app.innerHTML = `
+      <nav class="crumbs" aria-label="Migas"><a href="#/">Inicio</a><span aria-hidden="true">/</span><span>chuletas</span></nav>
+      <header class="route-head">
+        <span class="label mono">$ cat cheatsheet.md</span>
+        <h1>Chuletas para copiar</h1>
+        <p class="lead">Frases hechas para el trabajo. Escúchalas, cópialas y pégalas donde las necesites.</p>
+      </header>
+      <div class="toolbar">
+        <nav class="seg" aria-label="Secciones">${CHEATS.map(c => `<a class="opt" href="#/cheats" data-jump="${c.id}">${esc(c.title)}</a>`).join("")}</nav>
+        <div class="search-box"><span class="mono prompt" aria-hidden="true">grep</span><input id="cheat-search" type="search" placeholder="PR, call, deploy…" value="${esc(cheatState.q)}" aria-label="Buscar frase" autocomplete="off"></div>
+      </div>
+      <div id="cheat-list"></div>`;
+    renderCheatList();
+  }
+
+  function renderCheatList() {
+    const q = cheatState.q.trim().toLowerCase();
+    const html = CHEATS.map(c => {
+      const items = c.items.filter(it => !q || (it.en + " " + it.es).toLowerCase().includes(q));
+      if (!items.length) return "";
+      return `<section class="unit cheat" id="cheat-${c.id}" aria-labelledby="ch-${c.id}">
+        <div class="unit-head"><h2 id="ch-${c.id}">${esc(c.title)}</h2><span class="meter-txt">${items.length}</span></div>
+        ${items.map(it => `<div class="cheat-row" data-speak-host>
+          <button class="audio-btn" data-speak="${esc(it.en.trim())}" aria-label="Escuchar">${ICON.play}</button>
+          <div><p class="en speak-target" lang="en">${esc(it.en)}</p><p class="es">${esc(it.es)}</p></div>
+          <button class="btn btn-ghost copy-btn" data-copy="${esc(it.en)}" aria-label="Copiar: ${esc(it.en)}">Copiar</button>
+        </div>`).join("")}
+      </section>`;
+    }).join("");
+    $("#cheat-list").innerHTML = html || `<p class="muted">Sin resultados.</p>`;
+  }
+
+  app.addEventListener("click", e => {
+    const j = e.target.closest("[data-jump]");
+    if (!j) return;
+    e.preventDefault();
+    const sec = $(`#cheat-${j.dataset.jump}`);
+    if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   /* ═════════════ Lección ═════════════ */
@@ -674,10 +952,13 @@
   const COMMANDS = [
     { c: "continue", d: "Seguir con la siguiente lección" },
     { c: "home", d: "Ir a la portada" },
+    { c: "daily", d: "Preparar mi daily" },
+    { c: "pronounce", d: "Pronunciación de términos técnicos" },
+    { c: "cheats", d: "Chuletas para copiar" },
     ...ROUTES.filter(r => r.units.length).map(r => ({ c: `route ${r.id}`, d: r.title })),
     ...LESSONS.map(l => ({ c: `lesson ${l.id}`, d: `${l.unit.title} · ${l.title}` })),
+    { c: "theme dark", d: "Tema azul noche" },
     { c: "theme light", d: "Tema claro" },
-    { c: "theme dark", d: "Tema oscuro" },
     { c: "settings", d: "Ajustes de lectura" },
     { c: "voice uk", d: "Voz británica" },
     { c: "voice us", d: "Voz americana" },
@@ -707,6 +988,8 @@
       case "continue": location.hash = `#/l/${nextLesson().id}`; break;
       case "home": if (L) leaveLesson("#/"); else location.hash = "#/"; break;
       case "route": location.hash = `#/r/${arg}`; break;
+      case "daily": case "pronounce": case "cheats":
+        if (L) leaveLesson(`#/${verb === "pronounce" ? "say" : verb}`); else location.hash = `#/${verb === "pronounce" ? "say" : verb}`; break;
       case "lesson": location.hash = `#/l/${arg}`; break;
       case "theme": if (["light", "dark"].includes(arg)) { setSetting("theme", arg); toast(`theme → ${arg}`); } break;
       case "settings": openSettings(); break;
@@ -747,8 +1030,13 @@
     }
     if (L && view !== "l") { L = null; document.body.classList.remove("in-lesson"); if (synth) synth.cancel(); }
     renderStats();
+    const navKey = ["say", "daily", "cheats"].includes(view) ? view : "learn";
+    $$(".nav a").forEach(a => { if (a.dataset.nav === navKey) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     if (view === "l" && lessonById[id]) startLesson(id);
     else if (view === "r") renderRoute(id);
+    else if (view === "say") renderSay();
+    else if (view === "daily") renderDailyBuilder();
+    else if (view === "cheats") renderCheats();
     else renderHome();
     window.scrollTo({ top: 0 });
     if (!L) app.focus({ preventScroll: true });
