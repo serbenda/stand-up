@@ -1,131 +1,44 @@
 <!doctype html>
-<html lang="es" data-theme="cream" data-size="m" data-spacing="wide" data-font="lexend">
+<html lang="es" data-theme="light" data-size="m" data-spacing="wide" data-font="lexend">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>stand-up · inglés para el trabajo</title>
-  <meta name="description" content="Inglés para el trabajo, de A1 a C1, con alma geek: reuniones, entrevistas, incidencias, correos y expresiones reales. Lectura fácil, audio en cada frase y a tu ritmo.">
-  <meta name="theme-color" content="#FBF6EA">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='8' width='56' height='48' rx='10' fill='%23173027'/%3E%3Cpath d='M16 24 L26 32 L16 40' stroke='%236EE7A7' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='30' y='38' width='16' height='5' rx='2' fill='%236EE7A7'/%3E%3C/svg%3E">
+  <title>stand-up · Tech English para hispanohablantes</title>
+  <meta name="description" content="Inglés para trabajar en equipos técnicos: dailies, Slack, reuniones, entrevistas e incidencias. Frases cortas, lecciones de 3 minutos y lectura fácil.">
+  <meta name="theme-color" content="#F7F6F2">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314161A'/%3E%3Cpath d='M18 22 L28 32 L18 42' stroke='%232DD4BF' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='32' y='38' width='16' height='5' rx='2' fill='%232DD4BF'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500&family=Lexend:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <a class="skip" href="#main">Saltar al contenido</a>
+  <a class="skip" href="#app">Saltar al contenido</a>
 
-  <header class="top">
+  <header class="top" id="top">
     <div class="wrap top-inner">
-      <a class="brand" href="./" aria-label="stand-up, inicio">
+      <a class="brand" href="#/" aria-label="stand-up, inicio">
         <span class="brand-mark" aria-hidden="true">&gt;_</span>
-        <span class="brand-text">stand-up<span class="caret" aria-hidden="true"></span></span>
+        <span class="brand-text">stand-up</span>
       </a>
-      <nav class="tabs" aria-label="Secciones">
-        <button class="tab" data-view="learn">Aprender</button>
-        <button class="tab" data-view="practice">Practicar</button>
-        <button class="tab" data-view="play">Jugar</button>
-        <button class="tab" data-view="profile">Perfil</button>
-      </nav>
       <div class="top-tools">
-        <button class="stat-pill" id="hud" data-view-link="profile" title="Tu perfil">
-          <span id="hud-rank"></span><span class="sep sep1" aria-hidden="true">·</span><span id="hud-xp"></span><span class="sep" aria-hidden="true">·</span><span id="hud-streak"></span>
+        <span class="stats mono" id="stats" aria-live="polite"></span>
+        <button class="icon-btn" id="open-palette" aria-label="Paleta de comandos (Ctrl+K)" title="Comandos · Ctrl+K">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/></svg>
         </button>
-        <button class="btn btn-ghost icon-btn" id="open-palette" aria-label="Paleta de comandos (Ctrl+K)" title="Paleta de comandos · Ctrl+K"><span class="mono">⌘K</span></button>
-        <button class="btn btn-ghost icon-btn" id="open-settings" aria-haspopup="dialog" aria-label="Ajustes de lectura" title="Ajustes de lectura"><span aria-hidden="true">Aa</span></button>
+        <button class="icon-btn" id="open-settings" aria-label="Ajustes de lectura" title="Ajustes de lectura">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+        </button>
       </div>
     </div>
   </header>
 
-  <main id="main" class="wrap">
+  <main id="app" class="wrap" tabindex="-1"></main>
 
-    <!-- ───── Aprender ───── -->
-    <section id="view-learn" class="view" aria-labelledby="learn-title">
-      <div class="hero">
-        <div class="intro">
-          <p class="kicker mono">~/stand-up $ ./learn --from A1 --to C1</p>
-          <h1 id="learn-title">Inglés para el trabajo, <span class="nowrap">sin bugs</span></h1>
-          <p class="lead">Reuniones, entrevistas, incidencias y expresiones reales. Escucha, piensa y luego mira la traducción. A tu ritmo.</p>
-        </div>
-
-        <div class="term" id="daily" aria-label="Frase del día"></div>
-      </div>
-
-      <div class="goal" id="goal" aria-live="polite"></div>
-
-      <div class="filters" role="group" aria-label="Filtros">
-        <div class="filter-row">
-          <span class="filter-label" id="lvl-label">Nivel</span>
-          <div class="chips" id="level-chips" role="group" aria-labelledby="lvl-label"></div>
-        </div>
-        <div class="filter-row">
-          <span class="filter-label" id="cat-label">Tema</span>
-          <div class="chips" id="cat-chips" role="group" aria-labelledby="cat-label"></div>
-        </div>
-        <div class="filter-row search-row">
-          <label class="filter-label" for="search">Buscar</label>
-          <div class="search-box">
-            <span class="mono prompt" aria-hidden="true">grep -i</span>
-            <input id="search" type="search" placeholder="meeting, deploy, correo…" autocomplete="off">
-          </div>
-          <label class="check">
-            <input type="checkbox" id="hide-known"> Ocultar las que ya sé
-          </label>
-        </div>
-      </div>
-
-      <p class="count" id="count" aria-live="polite"></p>
-      <div class="cards" id="cards"></div>
-    </section>
-
-    <!-- ───── Practicar ───── -->
-    <section id="view-practice" class="view" aria-labelledby="practice-title" hidden>
-      <div class="intro">
-        <p class="kicker mono">$ stand-up review --interactive</p>
-        <h1 id="practice-title">Code review de frases</h1>
-        <p class="lead">Tarjetas una a una. Usa el nivel y el tema que tengas elegidos en «Aprender». Sin reloj.</p>
-      </div>
-
-      <div class="practice-bar">
-        <p id="practice-scope" class="muted"></p>
-        <div class="seg" role="group" aria-label="Dirección">
-          <button class="seg-btn" data-dir="en" aria-pressed="true">Inglés → Español</button>
-          <button class="seg-btn" data-dir="es" aria-pressed="false">Español → Inglés</button>
-        </div>
-      </div>
-
-      <div class="flash-wrap">
-        <div class="flash" id="flash" aria-live="polite"></div>
-        <div class="flash-actions" id="flash-actions"></div>
-        <p class="hint muted">Atajos: <kbd>Espacio</kbd> girar · <kbd>1</kbd> otra vez · <kbd>2</kbd> la sé · <kbd>L</kbd> escuchar</p>
-      </div>
-    </section>
-
-    <!-- ───── Jugar ───── -->
-    <section id="view-play" class="view" aria-labelledby="play-title" hidden>
-      <div class="intro">
-        <p class="kicker mono">$ stand-up play</p>
-        <h1 id="play-title">Jugar</h1>
-        <p class="lead">Practica en situaciones reales. Aquí no hay vidas ni cronómetro: si fallas, te explicamos por qué y lo vuelves a intentar.</p>
-      </div>
-      <div id="play-area"></div>
-    </section>
-
-    <!-- ───── Perfil ───── -->
-    <section id="view-profile" class="view" aria-labelledby="profile-title" hidden>
-      <div class="intro">
-        <p class="kicker mono">$ whoami</p>
-        <h1 id="profile-title">Tu perfil</h1>
-        <p class="lead">Todo se guarda solo en este navegador. Nadie más lo ve.</p>
-      </div>
-      <div id="profile-area"></div>
-    </section>
-  </main>
-
-  <footer class="foot">
-    <div class="wrap">
-      <p>stand-up · Hecho por <a href="https://github.com/serbenda">Bendi</a> · <a href="https://github.com/serbenda/stand-up">Código en GitHub</a> · <button class="linkish" data-cmd="help">Pulsa <kbd>Ctrl</kbd>+<kbd>K</kbd></button></p>
-      <p class="muted">El audio usa las voces de tu navegador. Si no oyes nada, prueba en Chrome, Edge o Safari.</p>
+  <footer class="foot" id="foot">
+    <div class="wrap foot-inner">
+      <span>stand-up · por <a href="https://github.com/serbenda">Bendi</a> · <a href="https://github.com/serbenda/stand-up">código</a></span>
+      <span class="muted"><kbd>Ctrl</kbd> <kbd>K</kbd> comandos</span>
     </div>
   </footer>
 
@@ -134,15 +47,24 @@
     <form method="dialog" class="settings">
       <div class="settings-head">
         <h2 id="settings-title">Ajustes de lectura</h2>
-        <button class="btn btn-ghost icon-btn" value="close" aria-label="Cerrar">✕</button>
+        <button class="icon-btn" value="close" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
       </div>
+
+      <fieldset>
+        <legend>Tema</legend>
+        <div class="seg">
+          <label class="opt"><input type="radio" name="theme" value="light"> Claro</label>
+          <label class="opt"><input type="radio" name="theme" value="dark"> Oscuro</label>
+        </div>
+      </fieldset>
 
       <fieldset>
         <legend>Letra</legend>
         <div class="seg">
           <label class="opt"><input type="radio" name="font" value="lexend"> <span style="font-family:Lexend">Lexend</span></label>
           <label class="opt"><input type="radio" name="font" value="atkinson"> <span style="font-family:'Atkinson Hyperlegible'">Atkinson</span></label>
-          <label class="opt"><input type="radio" name="font" value="mono"> <span style="font-family:'JetBrains Mono'">Mono</span></label>
           <label class="opt"><input type="radio" name="font" value="system"> <span style="font-family:system-ui">Sistema</span></label>
         </div>
       </fieldset>
@@ -150,29 +72,19 @@
       <fieldset>
         <legend>Tamaño</legend>
         <div class="seg">
-          <label class="opt"><input type="radio" name="size" value="s"> A</label>
-          <label class="opt"><input type="radio" name="size" value="m"> <span style="font-size:1.15em">A</span></label>
-          <label class="opt"><input type="radio" name="size" value="l"> <span style="font-size:1.3em">A</span></label>
-          <label class="opt"><input type="radio" name="size" value="xl"> <span style="font-size:1.5em">A</span></label>
+          <label class="opt"><input type="radio" name="size" value="s"> S</label>
+          <label class="opt"><input type="radio" name="size" value="m"> M</label>
+          <label class="opt"><input type="radio" name="size" value="l"> L</label>
+          <label class="opt"><input type="radio" name="size" value="xl"> XL</label>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>Espacio entre letras y líneas</legend>
+        <legend>Espaciado</legend>
         <div class="seg">
           <label class="opt"><input type="radio" name="spacing" value="normal"> Normal</label>
           <label class="opt"><input type="radio" name="spacing" value="wide"> Amplio</label>
           <label class="opt"><input type="radio" name="spacing" value="xwide"> Muy amplio</label>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Colores</legend>
-        <div class="seg">
-          <label class="opt"><input type="radio" name="theme" value="cream"> Crema</label>
-          <label class="opt"><input type="radio" name="theme" value="blue"> Azul suave</label>
-          <label class="opt"><input type="radio" name="theme" value="dark"> Oscuro</label>
-          <label class="opt"><input type="radio" name="theme" value="terminal"> Terminal</label>
         </div>
       </fieldset>
 
@@ -183,17 +95,17 @@
           <label class="opt"><input type="radio" name="accent" value="en-US"> Americana</label>
         </div>
         <label class="range">
-          Velocidad normal
+          <span>Velocidad</span>
           <input type="range" name="rate" min="0.6" max="1.2" step="0.05">
-          <output id="rate-out"></output>
+          <output id="rate-out" class="mono"></output>
         </label>
       </fieldset>
 
       <fieldset>
         <legend>Ayudas</legend>
-        <label class="check"><input type="checkbox" name="ruler"> Regla de lectura (una franja que sigue al ratón o al dedo)</label>
+        <label class="check"><input type="checkbox" name="autoplay"> Reproducir el audio automáticamente</label>
         <label class="check"><input type="checkbox" name="highlight"> Resaltar cada palabra mientras suena</label>
-        <label class="check"><input type="checkbox" name="fx"> Celebraciones (confeti y avisos de XP)</label>
+        <label class="check"><input type="checkbox" name="ruler"> Regla de lectura que sigue al ratón o al dedo</label>
       </fieldset>
 
       <button class="btn btn-primary" value="close">Listo</button>
@@ -202,22 +114,18 @@
 
   <!-- Paleta de comandos -->
   <dialog id="palette" class="palette" aria-label="Paleta de comandos">
-    <div class="palette-box">
-      <div class="palette-input">
-        <span class="mono prompt" aria-hidden="true">❯</span>
-        <input id="palette-input" type="text" autocomplete="off" spellcheck="false" placeholder="Escribe un comando… prueba «help»" aria-controls="palette-list">
-      </div>
-      <ul id="palette-list" class="palette-list" role="listbox"></ul>
-      <p class="palette-foot muted mono">↑↓ elegir · Enter ejecutar · Esc cerrar</p>
+    <div class="palette-input">
+      <span class="mono prompt" aria-hidden="true">❯</span>
+      <input id="palette-input" type="text" autocomplete="off" spellcheck="false" placeholder="Escribe un comando…" aria-controls="palette-list">
     </div>
+    <ul id="palette-list" class="palette-list" role="listbox"></ul>
+    <p class="palette-foot mono">↑↓ elegir · enter ejecutar · esc cerrar</p>
   </dialog>
 
-  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
   <div class="ruler" id="ruler" aria-hidden="true"></div>
-  <div class="confetti" id="confetti" aria-hidden="true"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="js/phrases.js"></script>
-  <script src="js/dialogs.js"></script>
+  <script src="js/content.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
