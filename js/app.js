@@ -153,8 +153,9 @@
     const nl = nextLesson();
     const started = Object.keys(prog.lessons).length > 0;
     app.innerHTML = `
+      <div class="hero-grid">
       <section class="hero">
-        <span class="label">Tech English · para hispanohablantes</span>
+        <span class="label mono">while (!fluent) { practice(); }</span>
         <h1>El inglés que se habla en equipos técnicos.</h1>
         <p class="lead">Frases cortas y reales para dailies, Slack, reuniones, entrevistas e incidencias. Lecciones de tres minutos, con audio y sin registro.</p>
         <div class="hero-actions">
@@ -167,6 +168,11 @@
           <span>${ICON.eye} Pensada para leer con dislexia</span>
         </div>
       </section>
+      <div class="shell" aria-hidden="true">
+        <div class="shell-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="shell-title">bendi@stand-up: ~</span></div>
+        <pre class="shell-body" id="shell"></pre>
+      </div>
+      </div>
 
       <div class="section-head">
         <h2>¿Qué quieres conseguir?</h2>
@@ -262,6 +268,111 @@
     const it = itemByKey[key];
     if (it) speak(it.en, b.closest(".phrase") && $(".en", b.closest(".phrase")), !!b.dataset.saySlow);
   });
+
+  /* ═════════════ Terminal animada de la portada ═════════════ */
+  const SESSIONS = [
+    { cmd: "standup --today", out: [["", "Yesterday I fixed the bug."], ["", "Today I'm on the pipeline."], ["", "No blockers."], ["ok", "✓ daily done in 27s"]] },
+    { cmd: 'grep -i "actually" mistakes.log', out: [["bad", "- actually = actualmente"], ["ok", "+ actually = en realidad"], ["dim", "1 false friend fixed"]] },
+    { cmd: 'git commit -m "fix: said it in English"', out: [["dim", "[main 4f2a1c9] fix: said it in English"], ["dim", " 1 meeting changed, 0 «I'm agree» left"]] },
+    { cmd: 'say --slow "Let\'s take it offline."', out: [["", "▶ Let's · take · it · offline."], ["dim", "hint: no tiene nada que ver con internet"]] },
+    { cmd: "curl -I https://my-english", out: [["ok", "HTTP/1.1 200 OK"], ["dim", "X-Accent: feature, not a bug"]] }
+  ];
+  let shellTimers = [];
+  const stopShell = () => { shellTimers.forEach(clearTimeout); shellTimers = []; };
+
+  function runShell() {
+    stopShell();
+    const el = $("#shell");
+    if (!el) return;
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const line = (cls, text) => `<span class="${cls || "out"}">${esc(text)}</span>\n`;
+    const prompt = cmd => `<span class="ps1">$</span> <span class="cmd">${esc(cmd)}</span>`;
+    if (reduce) {
+      const s = SESSIONS[0];
+      el.innerHTML = prompt(s.cmd) + "\n" + s.out.map(([c, t]) => line(c, t)).join("");
+      return;
+    }
+    let si = Math.floor(Math.random() * SESSIONS.length);
+    const at = (ms, fn) => shellTimers.push(setTimeout(fn, ms));
+    const play = () => {
+      const s = SESSIONS[si % SESSIONS.length]; si++;
+      let t = 0, typed = "";
+      el.innerHTML = prompt("") + '<span class="caret"></span>';
+      for (const ch of s.cmd) {
+        t += 38 + Math.random() * 40;
+        at(t, () => { typed += ch; el.innerHTML = prompt(typed) + '<span class="caret"></span>'; });
+      }
+      t += 350;
+      let out = "";
+      at(t, () => { el.innerHTML = prompt(s.cmd) + "\n"; });
+      s.out.forEach(([c, txt]) => { t += 420; at(t, () => { out += line(c, txt); el.innerHTML = prompt(s.cmd) + "\n" + out + '<span class="ps1">$</span> <span class="caret"></span>'; }); });
+      t += 2600;
+      at(t, play);
+    };
+    play();
+  }
+
+  /* ═════════════ fortune, man y 404 ═════════════ */
+  const FORTUNES = [
+    "while (!fluent) { practice(); }",
+    "Your accent is not a bug. It's a feature.",
+    "It works on my machine. Now say it in English.",
+    "git commit -m \"said «Let's take it offline» in a real meeting\"",
+    "// TODO: stop saying «I'm agree»",
+    "There's no place like 127.0.0.1",
+    "404: excuse not found. Practice today.",
+    "Ship it. Then explain it in English.",
+    "LGTM is a full sentence.",
+    "Cache is pronounced «cash». Invalidate your old habits.",
+    "sudo make me fluent → Permission denied. Try: practice --daily",
+    "Fluency is eventual consistency."
+  ];
+  const fortune = () => FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+
+  function renderMan() {
+    app.innerHTML = `
+      <article class="man">
+        <header class="man-head mono"><span>STAND-UP(1)</span><span>Tech English Manual</span><span>STAND-UP(1)</span></header>
+        <h2 class="mono">NAME</h2>
+        <p><b class="mono">stand-up</b> — inglés para trabajar en equipos técnicos, para hispanohablantes.</p>
+        <h2 class="mono">SYNOPSIS</h2>
+        <p class="mono">stand-up [--learn | --say | --daily | --cheats] [--slow] [--theme dark|light]</p>
+        <h2 class="mono">DESCRIPTION</h2>
+        <p>Frases cortas y reales para dailies, Slack, reuniones, entrevistas e incidencias. Lecciones de tres minutos con audio. Las opciones falsas son errores típicos de hispanohablantes, y cada fallo explica el porqué.</p>
+        <h2 class="mono">COMMANDS</h2>
+        <dl class="man-dl">
+          <dt class="mono"><a href="#/">learn</a></dt><dd>Rutas y lecciones al estilo Duolingo.</dd>
+          <dt class="mono"><a href="#/say">say</a></dt><dd>Pronunciación de ${TERMS.length} términos técnicos.</dd>
+          <dt class="mono"><a href="#/daily">daily</a></dt><dd>Prepara tu stand-up en inglés.</dd>
+          <dt class="mono"><a href="#/cheats">cheats</a></dt><dd>Frases para copiar y pegar.</dd>
+        </dl>
+        <h2 class="mono">KEYS</h2>
+        <dl class="man-dl">
+          <dt><kbd>1</kbd>–<kbd>4</kbd></dt><dd>Elegir opción.</dd>
+          <dt><kbd>Enter</kbd></dt><dd>Comprobar y continuar.</dd>
+          <dt><kbd>⌫</kbd></dt><dd>Quitar la última ficha.</dd>
+          <dt><kbd>R</kbd></dt><dd>Repetir el audio.</dd>
+          <dt><kbd>Ctrl</kbd> <kbd>K</kbd></dt><dd>Paleta de comandos.</dd>
+        </dl>
+        <h2 class="mono">BUGS</h2>
+        <p>Tu acento no es un bug. Las voces dependen de tu navegador: si no oyes nada, prueba en Chrome, Edge o Safari. Errores y frases nuevas, en <a href="https://github.com/serbenda/stand-up/issues">GitHub Issues</a>.</p>
+        <h2 class="mono">AUTHOR</h2>
+        <p><a href="https://bendi.dev">Bendi</a>.</p>
+        <h2 class="mono">SEE ALSO</h2>
+        <p class="mono">git(1), ssh(1), coffee(1)</p>
+      </article>`;
+  }
+
+  function render404(path) {
+    app.innerHTML = `
+      <section class="notfound">
+        <pre class="mono" aria-hidden="true">$ cd ${esc(path || "?")}
+cd: no such file or directory</pre>
+        <h1>404 · phrase not found</h1>
+        <p class="lead">Esta página no existe. Las frases sí: vuelve a la portada y sigue practicando.</p>
+        <a class="btn btn-primary" href="#/">cd ~</a>
+      </section>`;
+  }
 
   /* ═════════════ Herramientas ═════════════ */
   const TERMS = window.TERMS || [], TERM_CATS = window.TERM_CATS || [];
@@ -963,7 +1074,9 @@
     { c: "voice uk", d: "Voz británica" },
     { c: "voice us", d: "Voz americana" },
     { c: "say ", d: "Leer en voz alta lo que escribas" },
-    { c: "whoami", d: "Tu progreso" }
+    { c: "whoami", d: "Tu progreso" },
+    { c: "man stand-up", d: "El manual" },
+    { c: "fortune", d: "Una frase geek al azar" }
   ];
   let palSel = 0, palItems = [];
 
@@ -996,6 +1109,11 @@
       case "voice": setSetting("accent", arg === "us" ? "en-US" : "en-GB"); toast(`voice → ${arg === "us" ? "en-US" : "en-GB"}`); break;
       case "say": if (arg) speak(cmd.trim().slice(4)); break;
       case "whoami": toast(`${prog.xp} xp · ${streak()} días · ${learnedCount()}/${ALL_ITEMS.length} frases`); break;
+      case "man": location.hash = "#/man"; break;
+      case "fortune": toast(fortune()); break;
+      case "sudo": toast("Permission denied. Try: practice --daily"); break;
+      case "exit": case ":q": case ":wq": toast("Has salido de Vim. Enhorabuena."); break;
+      case "ls": toast("learn/  say/  daily/  cheats/  man/"); break;
       default: if (verb) toast(`command not found: ${verb}`);
     }
   }
@@ -1030,14 +1148,19 @@
     }
     if (L && view !== "l") { L = null; document.body.classList.remove("in-lesson"); if (synth) synth.cancel(); }
     renderStats();
-    const navKey = ["say", "daily", "cheats"].includes(view) ? view : "learn";
+    const navKey = ["say", "daily", "cheats"].includes(view) ? view : (["", "r", "l"].includes(view || "") ? "learn" : null);
     $$(".nav a").forEach(a => { if (a.dataset.nav === navKey) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     if (view === "l" && lessonById[id]) startLesson(id);
     else if (view === "r") renderRoute(id);
     else if (view === "say") renderSay();
     else if (view === "daily") renderDailyBuilder();
     else if (view === "cheats") renderCheats();
+    else if (view === "man") renderMan();
+    else if (view && view !== "") render404(h);
     else renderHome();
+    stopShell();
+    if ($("#shell")) runShell();
+    const f = $("#fortune"); if (f) f.textContent = fortune();
     window.scrollTo({ top: 0 });
     if (!L) app.focus({ preventScroll: true });
   }

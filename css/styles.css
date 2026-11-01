@@ -405,6 +405,7 @@ mark.blank { background: transparent; color: var(--faint); }
 #cheat-list { padding-bottom: 3rem; }
 
 @media (max-width: 860px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 0; padding-bottom: 1.5rem; }
   .nav { order: 3; width: 100%; margin: 0 0 .4rem; overflow-x: auto; }
   .top-inner { flex-wrap: wrap; }
   .daily-grid { grid-template-columns: 1fr; }
@@ -415,6 +416,40 @@ mark.blank { background: transparent; color: var(--faint); }
   .cheat-row .copy-btn { grid-column: 2; justify-self: start; }
   .nav a { padding: 0 .55rem; font-size: .8rem; }
 }
+
+
+/* ───── Terminal animada de la portada ───── */
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 2.5rem; align-items: center; }
+.hero-grid .hero { max-width: none; }
+.shell { background: var(--chrome); border: 1px solid var(--line-strong); border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, .25); }
+.shell-bar { display: flex; align-items: center; gap: .4rem; padding: .55rem .8rem; border-bottom: 1px solid var(--chrome-line); }
+.shell-bar .dot { width: 11px; height: 11px; border-radius: 50%; background: #34406A; }
+.shell-bar .dot:nth-child(1) { background: #F87171; }
+.shell-bar .dot:nth-child(2) { background: #FBBF24; }
+.shell-bar .dot:nth-child(3) { background: #36D399; }
+.shell-title { margin-left: .5rem; font-family: var(--mono); font-size: .7rem; color: var(--chrome-muted); letter-spacing: 0; }
+.shell-body { margin: 0; padding: 1rem 1.1rem 1.2rem; min-height: 190px; font-family: var(--mono); font-size: .8rem; line-height: 1.75; letter-spacing: 0; word-spacing: 0; color: var(--chrome-text); white-space: pre-wrap; }
+.shell-body .ps1 { color: #36D399; }
+.shell-body .cmd { color: var(--chrome-text); }
+.shell-body .out { color: var(--chrome-text); }
+.shell-body .ok { color: #36D399; }
+.shell-body .bad { color: #F87171; }
+.shell-body .dim { color: var(--chrome-muted); }
+.caret { display: inline-block; width: .55em; height: 1.1em; vertical-align: -.2em; background: var(--chrome-accent); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ───── fortune, man y 404 ───── */
+.fortune { flex: 1 1 100%; color: var(--muted); font-size: .75rem; }
+.fortune .ps1 { color: var(--accent); }
+.man { max-width: 760px; padding: 2rem 0 4rem; }
+.man-head { display: flex; justify-content: space-between; gap: 1rem; font-size: .75rem; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: .6rem; margin-bottom: 1.4rem; flex-wrap: wrap; }
+.man h2 { font-size: .85rem; font-weight: 500; color: var(--accent); margin: 1.6rem 0 .4rem; letter-spacing: .04em; }
+.man p, .man dd { color: var(--text); }
+.man-dl { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.4rem; margin: 0; }
+.man-dl dt { font-size: .9rem; }
+.man-dl dd { margin: 0; color: var(--muted); }
+.notfound { padding: 4rem 0; max-width: 640px; }
+.notfound pre { color: var(--muted); font-size: .85rem; margin: 0 0 1rem; }
 
 /* ───── Móvil ───── */
 @media (max-width: 640px) {
