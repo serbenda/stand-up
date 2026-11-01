@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="es" data-theme="cream" data-size="m" data-spacing="wide" data-font="lexend">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>stand-up · inglés para el trabajo</title>
+  <meta name="description" content="Inglés para el trabajo, de A1 a C1: reuniones, entrevistas, correos, temas técnicos y expresiones reales. Lectura fácil, audio en cada frase y a tu ritmo.">
+  <meta name="theme-color" content="#FBF6EA">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='8' width='56' height='38' rx='12' fill='%232F6F5E'/%3E%3Cpath d='M18 46 L14 58 L30 46Z' fill='%232F6F5E'/%3E%3Ctext x='32' y='34' font-family='Arial' font-weight='700' font-size='20' fill='%23FBF6EA' text-anchor='middle'%3EHi%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Saltar al contenido</a>
+
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="./" aria-label="stand-up, inicio">
+        <span class="brand-mark" aria-hidden="true">Hi</span>
+        <span class="brand-text">stand-up</span>
+      </a>
+      <nav class="tabs" aria-label="Secciones">
+        <button class="tab" data-view="learn" aria-current="page">Aprender</button>
+        <button class="tab" data-view="practice">Practicar</button>
+        <button class="tab" data-view="progress">Mi progreso</button>
+      </nav>
+      <button class="btn btn-ghost" id="open-settings" aria-haspopup="dialog">
+        <span aria-hidden="true">Aa</span> Lectura
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <!-- ───── Aprender ───── -->
+    <section id="view-learn" class="view" aria-labelledby="learn-title">
+      <div class="intro">
+        <h1 id="learn-title">Inglés para el trabajo, <span class="nowrap">frase a frase</span></h1>
+        <p class="lead">Del A1 al C1. Escucha cada frase, piensa qué significa y luego mira la traducción. Sin prisa.</p>
+      </div>
+
+      <article class="daily" id="daily" aria-label="Frase del día"></article>
+
+      <div class="filters" role="group" aria-label="Filtros">
+        <div class="filter-row">
+          <span class="filter-label" id="lvl-label">Nivel</span>
+          <div class="chips" id="level-chips" role="group" aria-labelledby="lvl-label"></div>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label" id="cat-label">Tema</span>
+          <div class="chips" id="cat-chips" role="group" aria-labelledby="cat-label"></div>
+        </div>
+        <div class="filter-row search-row">
+          <label class="filter-label" for="search">Buscar</label>
+          <input id="search" type="search" placeholder="meeting, correo, deploy…" autocomplete="off">
+          <label class="check">
+            <input type="checkbox" id="hide-known"> Ocultar las que ya sé
+          </label>
+        </div>
+      </div>
+
+      <p class="count" id="count" aria-live="polite"></p>
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <!-- ───── Practicar ───── -->
+    <section id="view-practice" class="view" aria-labelledby="practice-title" hidden>
+      <div class="intro">
+        <h1 id="practice-title">Practicar</h1>
+        <p class="lead">Tarjetas una a una. Se usan los filtros de nivel y tema que tengas elegidos en «Aprender».</p>
+      </div>
+
+      <div class="practice-bar">
+        <p id="practice-scope" class="muted"></p>
+        <div class="seg" role="group" aria-label="Dirección">
+          <button class="seg-btn" data-dir="en" aria-pressed="true">Inglés → Español</button>
+          <button class="seg-btn" data-dir="es" aria-pressed="false">Español → Inglés</button>
+        </div>
+      </div>
+
+      <div class="flash-wrap">
+        <div class="flash" id="flash" aria-live="polite"></div>
+        <div class="flash-actions" id="flash-actions"></div>
+        <p class="hint muted">Atajos: <kbd>Espacio</kbd> girar · <kbd>1</kbd> otra vez · <kbd>2</kbd> la sé · <kbd>L</kbd> escuchar</p>
+      </div>
+    </section>
+
+    <!-- ───── Progreso ───── -->
+    <section id="view-progress" class="view" aria-labelledby="progress-title" hidden>
+      <div class="intro">
+        <h1 id="progress-title">Mi progreso</h1>
+        <p class="lead">Se guarda solo en este navegador. Nadie más lo ve.</p>
+      </div>
+      <div class="progress-grid">
+        <div class="panel">
+          <h2>Por nivel</h2>
+          <div id="prog-levels"></div>
+        </div>
+        <div class="panel">
+          <h2>Por tema</h2>
+          <div id="prog-cats"></div>
+        </div>
+      </div>
+      <button class="btn btn-ghost danger" id="reset-progress">Borrar mi progreso</button>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap">
+      <p>stand-up · Hecho por <a href="https://github.com/serbenda">Bendi</a> · <a href="https://github.com/serbenda/stand-up">Código en GitHub</a></p>
+      <p class="muted">El audio usa las voces de tu navegador. Si no oyes nada, prueba en Chrome, Edge o Safari.</p>
+    </div>
+  </footer>
+
+  <!-- Ajustes de lectura -->
+  <dialog id="settings" aria-labelledby="settings-title">
+    <form method="dialog" class="settings">
+      <div class="settings-head">
+        <h2 id="settings-title">Ajustes de lectura</h2>
+        <button class="btn btn-ghost" value="close" aria-label="Cerrar">✕</button>
+      </div>
+
+      <fieldset>
+        <legend>Letra</legend>
+        <div class="seg">
+          <label class="opt"><input type="radio" name="font" value="lexend"> <span style="font-family:Lexend">Lexend</span></label>
+          <label class="opt"><input type="radio" name="font" value="atkinson"> <span style="font-family:'Atkinson Hyperlegible'">Atkinson</span></label>
+          <label class="opt"><input type="radio" name="font" value="system"> <span style="font-family:system-ui">Sistema</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Tamaño</legend>
+        <div class="seg">
+          <label class="opt"><input type="radio" name="size" value="s"> A</label>
+          <label class="opt"><input type="radio" name="size" value="m"> <span style="font-size:1.15em">A</span></label>
+          <label class="opt"><input type="radio" name="size" value="l"> <span style="font-size:1.3em">A</span></label>
+          <label class="opt"><input type="radio" name="size" value="xl"> <span style="font-size:1.5em">A</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Espacio entre letras y líneas</legend>
+        <div class="seg">
+          <label class="opt"><input type="radio" name="spacing" value="normal"> Normal</label>
+          <label class="opt"><input type="radio" name="spacing" value="wide"> Amplio</label>
+          <label class="opt"><input type="radio" name="spacing" value="xwide"> Muy amplio</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Colores</legend>
+        <div class="seg">
+          <label class="opt"><input type="radio" name="theme" value="cream"> Crema</label>
+          <label class="opt"><input type="radio" name="theme" value="blue"> Azul suave</label>
+          <label class="opt"><input type="radio" name="theme" value="dark"> Oscuro</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Voz</legend>
+        <div class="seg">
+          <label class="opt"><input type="radio" name="accent" value="en-GB"> Británica</label>
+          <label class="opt"><input type="radio" name="accent" value="en-US"> Americana</label>
+        </div>
+        <label class="range">
+          Velocidad normal
+          <input type="range" name="rate" min="0.6" max="1.2" step="0.05">
+          <output id="rate-out"></output>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Ayudas</legend>
+        <label class="check"><input type="checkbox" name="ruler"> Regla de lectura (una franja que sigue al ratón o al dedo)</label>
+        <label class="check"><input type="checkbox" name="highlight"> Resaltar cada palabra mientras suena</label>
+      </fieldset>
+
+      <button class="btn btn-primary" value="close">Listo</button>
+    </form>
+  </dialog>
+
+  <div class="ruler" id="ruler" aria-hidden="true"></div>
+
+  <script src="js/phrases.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
