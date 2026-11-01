@@ -29,6 +29,12 @@ Cada ruta tiene unidades, y cada unidad tres lecciones de nivel A2, B1 y B2 con 
 
 Las opciones falsas son **errores típicos de hispanohablantes**: *actually*, *assist*, *revision*, *resume*, *until* en lugar de *by*, *I'm agree*… Cada fallo explica el porqué y la frase vuelve al final de la lección.
 
+## Herramientas para el día a día
+
+- **Pronunciar** (`#/say`): 55 términos técnicos con audio, cómo suenan «a la española» y el error típico. *Cache* → «cash», *nginx* → «én-yin-ex», *deploy* → «di-PLÓI»…
+- **Mi daily** (`#/daily`): eliges qué hiciste ayer, qué harás hoy y tus bloqueos, rellenas los huecos y te monta el stand-up en inglés. Se puede escuchar y copiar, y se guarda para el día siguiente.
+- **Chuletas** (`#/cheats`): frases para copiar en comentarios de PR, Slack, correos, reuniones e incidencias.
+
 ## Detalles
 
 - Audio en cada frase con las voces del navegador: británica o americana, normal o despacio, con cada palabra resaltada mientras suena.
@@ -71,6 +77,7 @@ Para que una ruta «próximamente» pase a estar disponible, basta con rellenar 
 index.html
 css/styles.css
 js/content.js     ← rutas, lecciones y frases
+js/tools-data.js  ← pronunciación, plantillas de daily y chuletas
 js/app.js         ← lógica
 docs/estudio.md   ← estudio de referencias
 ```

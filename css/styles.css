@@ -94,6 +94,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .mono { font-family: var(--mono); letter-spacing: 0; word-spacing: 0; }
 .muted { color: var(--muted); }
 .label { font-family: var(--mono); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); word-spacing: 0; }
+.label.mono { text-transform: none; letter-spacing: 0; color: var(--accent); }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--accent); color: var(--accent-ink); padding: .5rem 1rem; border-radius: 8px; z-index: 60; }
 .skip:focus { left: 8px; }
 kbd { font-family: var(--mono); font-size: .75em; padding: .05rem .4rem; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 5px; background: var(--surface); color: var(--text); letter-spacing: 0; }
@@ -339,6 +340,81 @@ body.in-lesson .toast { bottom: 120px; }
 /* Regla de lectura */
 .ruler { position: fixed; left: 0; right: 0; height: calc(var(--fs) * var(--lh) + 14px); top: 0; pointer-events: none; z-index: 40; display: none; background: color-mix(in srgb, var(--accent) 10%, transparent); border-block: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); transform: translateY(-50%); }
 .ruler.on { display: block; }
+
+
+/* ───── Navegación ───── */
+.nav { display: flex; gap: .15rem; margin-left: 1.2rem; }
+.nav a { white-space: nowrap; font-size: .85rem; color: var(--muted); text-decoration: none; padding: 0 .75rem; min-height: 40px; display: inline-flex; align-items: center; border-radius: 8px; }
+.nav a:hover { color: var(--text); background: var(--surface-2); }
+.nav a[aria-current="page"] { color: var(--text); background: var(--surface-2); font-weight: 500; }
+body.in-lesson .nav { display: none; }
+
+/* ───── Herramientas: comunes ───── */
+.toolbar { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+.opt { font: inherit; font-size: .85rem; letter-spacing: inherit; word-spacing: inherit; color: var(--text); text-decoration: none; }
+button.opt { cursor: pointer; }
+.opt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+.search-box { display: flex; align-items: center; gap: .5rem; border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r); padding-left: .8rem; min-width: min(100%, 280px); }
+.search-box:focus-within { border-color: var(--accent); }
+.search-box .prompt { font-size: .72rem; color: var(--accent); }
+.search-box input { flex: 1; min-height: 44px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: .9rem; letter-spacing: inherit; padding-right: .8rem; }
+.search-box input:focus { outline: none; }
+.routes.tools .route { min-height: 0; }
+
+/* ───── Pronunciación ───── */
+.terms { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); padding-bottom: 3rem; }
+.term { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; display: grid; gap: .35rem; align-content: start; }
+.term-head { display: flex; justify-content: space-between; align-items: center; gap: .6rem; }
+.term h3 { font-family: var(--mono); font-size: 1.15rem; font-weight: 500; letter-spacing: 0; margin: 0; }
+.term-audio { display: flex; gap: .35rem; }
+.term .audio-btn { width: 40px; height: 40px; }
+.sounds { margin: 0; font-size: 1.1rem; font-weight: 600; }
+.sounds .label, .wrong-say .label { display: inline-block; min-width: 3.4em; font-weight: 400; }
+.wrong-say { margin: 0; color: var(--muted); font-size: .9rem; }
+.wrong-say .label { color: var(--bad); }
+.term-note { margin: .2rem 0 0; font-size: .82rem; color: var(--muted); }
+
+/* ───── Constructor de daily ───── */
+.daily-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 1.5rem; align-items: start; padding-bottom: 3rem; }
+.daily-form { display: grid; gap: 1rem; }
+.daily-sec { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; }
+.daily-sec h2 { font-size: 1rem; margin-bottom: .6rem; }
+.daily-line { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: .5rem 0; border-top: 1px dashed var(--line); }
+.daily-line:first-child { border-top: 0; padding-top: 0; }
+.daily-line select, .daily-line input {
+  font: inherit; font-size: .9rem; letter-spacing: inherit; color: var(--text);
+  min-height: 46px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--bg); padding: 0 .7rem;
+}
+.daily-line select { flex: 1 1 220px; }
+.daily-line input { flex: 1 1 180px; }
+.daily-line select:focus, .daily-line input:focus { outline: none; border-color: var(--accent); }
+.daily-out { position: sticky; top: 80px; background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; padding: 1.2rem; display: grid; gap: .8rem; }
+.script { font-size: 1.2rem; line-height: 1.8; margin: 0; }
+mark.filled { background: var(--accent-soft); color: inherit; border-radius: 4px; padding: 0 .15em; }
+mark.blank { background: transparent; color: var(--faint); }
+.out-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+/* ───── Chuletas ───── */
+.cheat { margin-bottom: 1.2rem; scroll-margin-top: 80px; }
+.cheat-row { display: grid; grid-template-columns: auto 1fr auto; gap: .9rem; align-items: center; padding: .7rem 1.2rem; border-top: 1px solid var(--line); }
+.cheat-row:first-of-type { border-top: 0; }
+.cheat-row .en { margin: 0; font-weight: 500; font-size: 1.02rem; }
+.cheat-row .es { margin: 0; font-size: .85rem; color: var(--muted); }
+.cheat-row .audio-btn { width: 40px; height: 40px; }
+.copy-btn { min-height: 40px; padding: 0 .9rem; font-size: .8rem; }
+#cheat-list { padding-bottom: 3rem; }
+
+@media (max-width: 860px) {
+  .nav { order: 3; width: 100%; margin: 0 0 .4rem; overflow-x: auto; }
+  .top-inner { flex-wrap: wrap; }
+  .daily-grid { grid-template-columns: 1fr; }
+  .daily-out { position: static; }
+}
+@media (max-width: 640px) {
+  .cheat-row { grid-template-columns: auto 1fr; }
+  .cheat-row .copy-btn { grid-column: 2; justify-self: start; }
+  .nav a { padding: 0 .55rem; font-size: .8rem; }
+}
 
 /* ───── Móvil ───── */
 @media (max-width: 640px) {
