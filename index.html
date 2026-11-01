@@ -96,15 +96,20 @@
 
       <fieldset>
         <legend>Voz</legend>
+        <div class="seg" role="radiogroup" aria-label="Tipo de voz">
+          <label class="opt"><input type="radio" name="voiceMode" value="recorded"> Grabada (recomendada)</label>
+          <label class="opt"><input type="radio" name="voiceMode" value="browser"> Del navegador</label>
+        </div>
         <div class="seg">
           <label class="opt"><input type="radio" name="accent" value="en-GB"> Británica</label>
           <label class="opt"><input type="radio" name="accent" value="en-US"> Americana</label>
         </div>
         <label class="voice-pick">
-          <span class="sr-only">Voz concreta</span>
-          <select id="voice-select" aria-label="Voz concreta"></select>
+          <span class="sr-only">Voz del navegador</span>
+          <select id="voice-select" aria-label="Voz del navegador (para textos sin grabación)"></select>
           <button type="button" class="btn btn-ghost" id="voice-test">Probar</button>
         </label>
+        <p class="voice-hint">La voz grabada es una voz neuronal de calidad, igual en todos los dispositivos. La del navegador solo se usa para textos sin grabación, como tu daily.</p>
         <p class="voice-hint" id="voice-hint" hidden>Tu sistema solo tiene voces básicas. Para que suene natural, usa Chrome o Edge, o instala una voz inglesa de calidad: en Mac, Ajustes del Sistema → Accesibilidad → Contenido leído → Voz del sistema → Gestionar voces (por ejemplo «Daniel (mejorada)» o «Ava (Premium)»); en Windows, Configuración → Hora e idioma → Voz.</p>
         <label class="range">
           <span>Velocidad</span>
@@ -139,6 +144,7 @@
 
   <script src="js/content.js"></script>
   <script src="js/tools-data.js"></script>
+  <script src="js/audio-manifest.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
