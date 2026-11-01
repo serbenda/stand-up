@@ -37,7 +37,7 @@ Las opciones falsas son **errores típicos de hispanohablantes**: *actually*, *a
 
 ## Detalles
 
-- Audio en cada frase con las voces del navegador: británica o americana, normal o despacio, con cada palabra resaltada mientras suena.
+- **Audio grabado con voz neuronal** ([Kokoro](https://github.com/hexgrad/kokoro), Apache 2.0) en acento británico y americano, igual en todos los dispositivos. Hay velocidad normal y despacio, y cada palabra se resalta mientras suena. Los textos sin grabación, como tu daily, usan la voz del navegador. Para regenerarlo, mira [`tools/audio`](tools/audio/README.md).
 - Todo con teclado: <kbd>1</kbd>–<kbd>4</kbd> elegir, <kbd>Enter</kbd> comprobar, <kbd>⌫</kbd> borrar ficha, <kbd>R</kbd> repetir audio y <kbd>Ctrl</kbd>+<kbd>K</kbd> paleta de comandos.
 - Progreso, XP y días seguidos guardados solo en tu navegador.
 
@@ -78,6 +78,9 @@ index.html
 css/styles.css
 js/content.js     ← rutas, lecciones y frases
 js/tools-data.js  ← pronunciación, plantillas de daily y chuletas
+js/audio-manifest.js ← lista de textos con grabación
 js/app.js         ← lógica
 docs/estudio.md   ← estudio de referencias
+audio/us, audio/gb ← grabaciones (mp3)
+tools/audio/      ← scripts para generar las grabaciones
 ```

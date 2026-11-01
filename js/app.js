@@ -45,7 +45,7 @@
     set(k, v) { try { localStorage.setItem("su2." + k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } }
   };
 
-  const DEFAULTS = { theme: "dark", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", voiceName: "", rate: 0.95, autoplay: true, highlight: true, ruler: false };
+  const DEFAULTS = { theme: "dark", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", voiceMode: "recorded", voiceName: "", rate: 0.95, autoplay: true, highlight: true, ruler: false };
   const settings = Object.assign({}, DEFAULTS, store.get("settings", {}));
   const prog = Object.assign({ lessons: {}, seen: {}, xp: 0, log: {} }, store.get("progress", {}));
   const saveProg = () => store.set("progress", prog);
@@ -121,10 +121,74 @@
   const clearHighlight = () => { if (speakingEl) $$(".w.on", speakingEl).forEach(w => w.classList.remove("on")); speakingEl = null; };
   let warnedNoVoice = false;
 
+  /* ── Grabaciones (voz neuronal pregenerada) ──
+     Cada texto tiene un mp3 por acento en audio/us y audio/gb, con nombre = hash del texto.
+     Si no hay grabación para un texto (por ejemplo, tu daily), se usa la voz del navegador. */
+  const audioHash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+  const AUDIO_KEYS = new Set(window.AUDIO_KEYS || []);
+  const player = new Audio();
+  player.preload = "auto";
+  let playTicket = 0, rafId = 0;
+
+  const accentDir = () => (settings.accent === "en-US" ? "us" : "gb");
+  const audioUrl = text => {
+    const key = audioHash(text.trim());
+    return AUDIO_KEYS.has(key) ? `audio/${accentDir()}/${key}.mp3` : null;
+  };
+  const preloaded = new Set();
+  function preloadAudio(text) {
+    const url = settings.voiceMode !== "browser" && text && audioUrl(text);
+    if (!url || preloaded.has(url)) return;
+    preloaded.add(url);
+    const a = new Audio(); a.preload = "auto"; a.src = url;
+  }
+
+  function stopAudio() {
+    playTicket++;
+    cancelAnimationFrame(rafId);
+    try { player.pause(); } catch (e) { /* nada */ }
+    if (synth) synth.cancel();
+    clearHighlight();
+  }
+
+  // Sin eventos de palabra en un mp3: resaltamos según la posición en el audio, en proporción a los caracteres
+  function followWords(el, text) {
+    const words = $$(".w", el);
+    if (!words.length) return;
+    const total = text.length;
+    const tick = () => {
+      if (player.paused || !player.duration) return;
+      const pos = Math.min(total, (player.currentTime / player.duration) * total * 1.04);
+      let cur = null;
+      for (const w of words) { if (+w.dataset.s <= pos) cur = w; else break; }
+      words.forEach(w => w.classList.toggle("on", w === cur));
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+
   async function speak(text, el, slow) {
+    stopAudio();
+    const ticket = playTicket;
+    const url = settings.voiceMode !== "browser" && audioUrl(text);
+    if (url) {
+      try {
+        if (!player.src.endsWith(url)) player.src = url;
+        player.currentTime = 0;
+        player.preservesPitch = true;
+        player.playbackRate = (settings.rate / 0.95) * (slow ? 0.78 : 1);
+        if (el && settings.highlight) { speakingEl = el; player.onplaying = () => { if (ticket === playTicket) followWords(el, text); }; }
+        player.onended = () => { cancelAnimationFrame(rafId); clearHighlight(); };
+        await player.play();
+        return;
+      } catch (err) {
+        if (ticket !== playTicket || (err && err.name === "AbortError")) return;
+        // si falla la grabación, seguimos con la voz del navegador
+      }
+    }
     if (!synth) { toast("Este navegador no tiene voces"); return; }
-    synth.cancel(); clearHighlight();
     await voicesReady();
+    if (ticket !== playTicket) return;
     const v = pickVoice(settings.accent);
     if (!v && !warnedNoVoice) { warnedNoVoice = true; toast("No hay voz en inglés instalada: mira Ajustes de lectura → Voz"); }
     const u = new SpeechSynthesisUtterance(text);
@@ -165,7 +229,7 @@
   function setSetting(k, v) { settings[k] = v; store.set("settings", settings); applySettings(); }
   function syncSettingsForm() {
     const f = $("#settings form");
-    ["theme", "font", "size", "spacing", "accent"].forEach(n => { const i = $(`input[name="${n}"][value="${settings[n]}"]`, f); if (i) i.checked = true; });
+    ["theme", "font", "size", "spacing", "accent", "voiceMode"].forEach(n => { const i = $(`input[name="${n}"][value="${settings[n]}"]`, f); if (i) i.checked = true; });
     f.rate.value = settings.rate;
     ["autoplay", "highlight", "ruler"].forEach(n => { f[n].checked = !!settings[n]; });
     refreshVoiceSelect();
@@ -189,7 +253,12 @@
     if (hint) hint.hidden = en.some(v => /natural|google|premium|enhanced|mejorada/i.test(v.name));
   }
   document.getElementById("voice-select").addEventListener("change", e => { setSetting("voiceName", e.target.value); });
-  document.getElementById("voice-test").addEventListener("click", () => speak("Quick update: the cache is in the queue. Let's take it offline.", null, false));
+  // «Probar» siempre usa la voz del navegador elegida, que es lo que se está configurando
+  document.getElementById("voice-test").addEventListener("click", () => {
+    const mode = settings.voiceMode; settings.voiceMode = "browser";
+    speak("Quick update: the cache is in the queue. Let's take it offline.", null, false);
+    settings.voiceMode = mode;
+  });
   const openSettings = () => { syncSettingsForm(); $("#settings").showModal(); };
   $("#open-settings").addEventListener("click", openSettings);
   document.addEventListener("pointermove", e => { if (settings.ruler) $("#ruler").style.top = e.clientY + "px"; }, { passive: true });
@@ -408,7 +477,7 @@
           <dt><kbd>Ctrl</kbd> <kbd>K</kbd></dt><dd>Paleta de comandos.</dd>
         </dl>
         <h2 class="mono">BUGS</h2>
-        <p>Tu acento no es un bug. Las voces dependen de tu navegador: si no oyes nada, prueba en Chrome, Edge o Safari. Errores y frases nuevas, en <a href="https://github.com/serbenda/stand-up/issues">GitHub Issues</a>.</p>
+        <p>Tu acento no es un bug. Las frases suenan con grabaciones de voz neuronal (Kokoro, Apache 2.0); los textos sin grabación usan la voz de tu navegador. Errores y frases nuevas, en <a href="https://github.com/serbenda/stand-up/issues">GitHub Issues</a>.</p>
         <h2 class="mono">AUTHOR</h2>
         <p><a href="https://bendi.dev">Bendi</a>.</p>
         <h2 class="mono">SEE ALSO</h2>
@@ -710,7 +779,7 @@ cd: no such file or directory</pre>
   }
 
   function leaveLesson(to) {
-    if (synth) synth.cancel();
+    stopAudio();
     L = null;
     document.body.classList.remove("in-lesson");
     location.hash = to || "#/";
@@ -836,6 +905,8 @@ cd: no such file or directory</pre>
       <div class="checkbar" id="checkbar"></div>`;
 
     renderCheckbar();
+    preloadAudio(mainText(ex));
+    const nx = L.queue[L.pos + 1]; if (nx) preloadAudio(mainText(nx));
     if (settings.autoplay && (ex.type === "intro" || ex.type === "listen")) setTimeout(() => sayMain(false), 250);
     const first = $("#ex .option:not([disabled]), #ex .tile:not(.used), #checkbar .btn-primary");
     if (first) first.focus({ preventScroll: true });
@@ -1199,7 +1270,8 @@ cd: no such file or directory</pre>
       location.replace(lessonById[id] ? `#/r/${lessonById[id].route.id}` : "#/");
       return;
     }
-    if (L && view !== "l") { L = null; document.body.classList.remove("in-lesson"); if (synth) synth.cancel(); }
+    if (L && view !== "l") { L = null; document.body.classList.remove("in-lesson"); }
+    stopAudio();
     renderStats();
     const navKey = ["say", "daily", "cheats"].includes(view) ? view : (["", "r", "l"].includes(view || "") ? "learn" : null);
     $$(".nav a").forEach(a => { if (a.dataset.nav === navKey) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
