@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>stand-up · inglés para el trabajo</title>
-  <meta name="description" content="Inglés para el trabajo, de A1 a C1: reuniones, entrevistas, correos, temas técnicos y expresiones reales. Lectura fácil, audio en cada frase y a tu ritmo.">
+  <meta name="description" content="Inglés para el trabajo, de A1 a C1, con alma geek: reuniones, entrevistas, incidencias, correos y expresiones reales. Lectura fácil, audio en cada frase y a tu ritmo.">
   <meta name="theme-color" content="#FBF6EA">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='8' width='56' height='38' rx='12' fill='%232F6F5E'/%3E%3Cpath d='M18 46 L14 58 L30 46Z' fill='%232F6F5E'/%3E%3Ctext x='32' y='34' font-family='Arial' font-weight='700' font-size='20' fill='%23FBF6EA' text-anchor='middle'%3EHi%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='8' width='56' height='48' rx='10' fill='%23173027'/%3E%3Cpath d='M16 24 L26 32 L16 40' stroke='%236EE7A7' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='30' y='38' width='16' height='5' rx='2' fill='%236EE7A7'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -18,17 +18,22 @@
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="./" aria-label="stand-up, inicio">
-        <span class="brand-mark" aria-hidden="true">Hi</span>
-        <span class="brand-text">stand-up</span>
+        <span class="brand-mark" aria-hidden="true">&gt;_</span>
+        <span class="brand-text">stand-up<span class="caret" aria-hidden="true"></span></span>
       </a>
       <nav class="tabs" aria-label="Secciones">
-        <button class="tab" data-view="learn" aria-current="page">Aprender</button>
+        <button class="tab" data-view="learn">Aprender</button>
         <button class="tab" data-view="practice">Practicar</button>
-        <button class="tab" data-view="progress">Mi progreso</button>
+        <button class="tab" data-view="play">Jugar</button>
+        <button class="tab" data-view="profile">Perfil</button>
       </nav>
-      <button class="btn btn-ghost" id="open-settings" aria-haspopup="dialog">
-        <span aria-hidden="true">Aa</span> Lectura
-      </button>
+      <div class="top-tools">
+        <button class="stat-pill" id="hud" data-view-link="profile" title="Tu perfil">
+          <span id="hud-rank"></span><span class="sep sep1" aria-hidden="true">·</span><span id="hud-xp"></span><span class="sep" aria-hidden="true">·</span><span id="hud-streak"></span>
+        </button>
+        <button class="btn btn-ghost icon-btn" id="open-palette" aria-label="Paleta de comandos (Ctrl+K)" title="Paleta de comandos · Ctrl+K"><span class="mono">⌘K</span></button>
+        <button class="btn btn-ghost icon-btn" id="open-settings" aria-haspopup="dialog" aria-label="Ajustes de lectura" title="Ajustes de lectura"><span aria-hidden="true">Aa</span></button>
+      </div>
     </div>
   </header>
 
@@ -36,12 +41,17 @@
 
     <!-- ───── Aprender ───── -->
     <section id="view-learn" class="view" aria-labelledby="learn-title">
-      <div class="intro">
-        <h1 id="learn-title">Inglés para el trabajo, <span class="nowrap">frase a frase</span></h1>
-        <p class="lead">Del A1 al C1. Escucha cada frase, piensa qué significa y luego mira la traducción. Sin prisa.</p>
+      <div class="hero">
+        <div class="intro">
+          <p class="kicker mono">~/stand-up $ ./learn --from A1 --to C1</p>
+          <h1 id="learn-title">Inglés para el trabajo, <span class="nowrap">sin bugs</span></h1>
+          <p class="lead">Reuniones, entrevistas, incidencias y expresiones reales. Escucha, piensa y luego mira la traducción. A tu ritmo.</p>
+        </div>
+
+        <div class="term" id="daily" aria-label="Frase del día"></div>
       </div>
 
-      <article class="daily" id="daily" aria-label="Frase del día"></article>
+      <div class="goal" id="goal" aria-live="polite"></div>
 
       <div class="filters" role="group" aria-label="Filtros">
         <div class="filter-row">
@@ -54,7 +64,10 @@
         </div>
         <div class="filter-row search-row">
           <label class="filter-label" for="search">Buscar</label>
-          <input id="search" type="search" placeholder="meeting, correo, deploy…" autocomplete="off">
+          <div class="search-box">
+            <span class="mono prompt" aria-hidden="true">grep -i</span>
+            <input id="search" type="search" placeholder="meeting, deploy, correo…" autocomplete="off">
+          </div>
           <label class="check">
             <input type="checkbox" id="hide-known"> Ocultar las que ya sé
           </label>
@@ -68,8 +81,9 @@
     <!-- ───── Practicar ───── -->
     <section id="view-practice" class="view" aria-labelledby="practice-title" hidden>
       <div class="intro">
-        <h1 id="practice-title">Practicar</h1>
-        <p class="lead">Tarjetas una a una. Se usan los filtros de nivel y tema que tengas elegidos en «Aprender».</p>
+        <p class="kicker mono">$ stand-up review --interactive</p>
+        <h1 id="practice-title">Code review de frases</h1>
+        <p class="lead">Tarjetas una a una. Usa el nivel y el tema que tengas elegidos en «Aprender». Sin reloj.</p>
       </div>
 
       <div class="practice-bar">
@@ -87,29 +101,30 @@
       </div>
     </section>
 
-    <!-- ───── Progreso ───── -->
-    <section id="view-progress" class="view" aria-labelledby="progress-title" hidden>
+    <!-- ───── Jugar ───── -->
+    <section id="view-play" class="view" aria-labelledby="play-title" hidden>
       <div class="intro">
-        <h1 id="progress-title">Mi progreso</h1>
-        <p class="lead">Se guarda solo en este navegador. Nadie más lo ve.</p>
+        <p class="kicker mono">$ stand-up play</p>
+        <h1 id="play-title">Jugar</h1>
+        <p class="lead">Practica en situaciones reales. Aquí no hay vidas ni cronómetro: si fallas, te explicamos por qué y lo vuelves a intentar.</p>
       </div>
-      <div class="progress-grid">
-        <div class="panel">
-          <h2>Por nivel</h2>
-          <div id="prog-levels"></div>
-        </div>
-        <div class="panel">
-          <h2>Por tema</h2>
-          <div id="prog-cats"></div>
-        </div>
+      <div id="play-area"></div>
+    </section>
+
+    <!-- ───── Perfil ───── -->
+    <section id="view-profile" class="view" aria-labelledby="profile-title" hidden>
+      <div class="intro">
+        <p class="kicker mono">$ whoami</p>
+        <h1 id="profile-title">Tu perfil</h1>
+        <p class="lead">Todo se guarda solo en este navegador. Nadie más lo ve.</p>
       </div>
-      <button class="btn btn-ghost danger" id="reset-progress">Borrar mi progreso</button>
+      <div id="profile-area"></div>
     </section>
   </main>
 
   <footer class="foot">
     <div class="wrap">
-      <p>stand-up · Hecho por <a href="https://github.com/serbenda">Bendi</a> · <a href="https://github.com/serbenda/stand-up">Código en GitHub</a></p>
+      <p>stand-up · Hecho por <a href="https://github.com/serbenda">Bendi</a> · <a href="https://github.com/serbenda/stand-up">Código en GitHub</a> · <button class="linkish" data-cmd="help">Pulsa <kbd>Ctrl</kbd>+<kbd>K</kbd></button></p>
       <p class="muted">El audio usa las voces de tu navegador. Si no oyes nada, prueba en Chrome, Edge o Safari.</p>
     </div>
   </footer>
@@ -119,7 +134,7 @@
     <form method="dialog" class="settings">
       <div class="settings-head">
         <h2 id="settings-title">Ajustes de lectura</h2>
-        <button class="btn btn-ghost" value="close" aria-label="Cerrar">✕</button>
+        <button class="btn btn-ghost icon-btn" value="close" aria-label="Cerrar">✕</button>
       </div>
 
       <fieldset>
@@ -127,6 +142,7 @@
         <div class="seg">
           <label class="opt"><input type="radio" name="font" value="lexend"> <span style="font-family:Lexend">Lexend</span></label>
           <label class="opt"><input type="radio" name="font" value="atkinson"> <span style="font-family:'Atkinson Hyperlegible'">Atkinson</span></label>
+          <label class="opt"><input type="radio" name="font" value="mono"> <span style="font-family:'JetBrains Mono'">Mono</span></label>
           <label class="opt"><input type="radio" name="font" value="system"> <span style="font-family:system-ui">Sistema</span></label>
         </div>
       </fieldset>
@@ -156,6 +172,7 @@
           <label class="opt"><input type="radio" name="theme" value="cream"> Crema</label>
           <label class="opt"><input type="radio" name="theme" value="blue"> Azul suave</label>
           <label class="opt"><input type="radio" name="theme" value="dark"> Oscuro</label>
+          <label class="opt"><input type="radio" name="theme" value="terminal"> Terminal</label>
         </div>
       </fieldset>
 
@@ -176,15 +193,31 @@
         <legend>Ayudas</legend>
         <label class="check"><input type="checkbox" name="ruler"> Regla de lectura (una franja que sigue al ratón o al dedo)</label>
         <label class="check"><input type="checkbox" name="highlight"> Resaltar cada palabra mientras suena</label>
+        <label class="check"><input type="checkbox" name="fx"> Celebraciones (confeti y avisos de XP)</label>
       </fieldset>
 
       <button class="btn btn-primary" value="close">Listo</button>
     </form>
   </dialog>
 
+  <!-- Paleta de comandos -->
+  <dialog id="palette" class="palette" aria-label="Paleta de comandos">
+    <div class="palette-box">
+      <div class="palette-input">
+        <span class="mono prompt" aria-hidden="true">❯</span>
+        <input id="palette-input" type="text" autocomplete="off" spellcheck="false" placeholder="Escribe un comando… prueba «help»" aria-controls="palette-list">
+      </div>
+      <ul id="palette-list" class="palette-list" role="listbox"></ul>
+      <p class="palette-foot muted mono">↑↓ elegir · Enter ejecutar · Esc cerrar</p>
+    </div>
+  </dialog>
+
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
   <div class="ruler" id="ruler" aria-hidden="true"></div>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
 
   <script src="js/phrases.js"></script>
+  <script src="js/dialogs.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
