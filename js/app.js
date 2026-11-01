@@ -45,7 +45,7 @@
     set(k, v) { try { localStorage.setItem("su2." + k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } }
   };
 
-  const DEFAULTS = { theme: "light", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", rate: 0.95, autoplay: true, highlight: true, ruler: false };
+  const DEFAULTS = { theme: "dark", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", rate: 0.95, autoplay: true, highlight: true, ruler: false };
   const settings = Object.assign({}, DEFAULTS, store.get("settings", {}));
   const prog = Object.assign({ lessons: {}, seen: {}, xp: 0, log: {} }, store.get("progress", {}));
   const saveProg = () => store.set("progress", prog);
@@ -676,8 +676,8 @@
     { c: "home", d: "Ir a la portada" },
     ...ROUTES.filter(r => r.units.length).map(r => ({ c: `route ${r.id}`, d: r.title })),
     ...LESSONS.map(l => ({ c: `lesson ${l.id}`, d: `${l.unit.title} · ${l.title}` })),
+    { c: "theme dark", d: "Tema azul noche" },
     { c: "theme light", d: "Tema claro" },
-    { c: "theme dark", d: "Tema oscuro" },
     { c: "settings", d: "Ajustes de lectura" },
     { c: "voice uk", d: "Voz británica" },
     { c: "voice us", d: "Voz americana" },
