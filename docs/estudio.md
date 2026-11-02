@@ -13,10 +13,24 @@ Qué hacen bien otras webs de idiomas y qué tomamos para stand-up.
 
 ## Qué tomamos
 
-1. **Rutas por objetivo (Speak Tech English).** La portada pregunta qué quieres conseguir. El nivel A2–B2 va dentro de cada unidad, como dificultad.
+1. **Rutas por objetivo (Speak Tech English).** La portada pregunta qué quieres conseguir. El nivel A2–C1 va dentro de cada unidad, como dificultad.
 2. **Mecánica de lección de Duolingo.** Frases de 2 a 7 palabras y una pantalla por ejercicio: escuchar, completar, construir con fichas y emparejar. Barra inferior con el resultado y las frases falladas vuelven al final.
 3. **Errores típicos como opciones falsas.** Mejora lo que le falta a Duolingo: *actually*, *assist*, *revision*, *resume*, *until* en lugar de *by*, *I'm agree*… Cada fallo explica el porqué en una línea.
 4. **Situaciones reales (ELLA y Speak Tech English).** Al final de cada lección, alguien te escribe en un daily, en Slack o en una reunión y eliges qué responder.
+
+## Revisión de profesor (noviembre de 2026)
+
+Revisión del contenido desde el punto de vista de un profesor de inglés con experiencia en equipos técnicos. Cambios aplicados:
+
+- **Opciones ambiguas eliminadas**: ninguna respuesta correcta puede contarse como fallo.
+- **Pronunciación verificada**: se revisó cómo transcribe el motor cada término (*regex*, *Postgres*, *debug*, siglas y cifras).
+- **De reconocer a producir**: ejercicio de *shadowing* con grabación opcional.
+- **Repaso espaciado** para no olvidar lo aprendido.
+- **Errores de fondo**: tiempos verbales (*I have finished it yesterday*), tono demasiado directo y falsos amigos.
+- **Lo que se dice en cada daily**: números, versiones, plazos y siglas (ETA, OOO, EOD).
+- **Entrevistas**: presentarse, contar un proyecto con STAR y las preguntas finales.
+
+Pendiente: rutas 03 y 04, y voces con acentos no nativos para entrenar el oído.
 
 ## Estilo
 

@@ -457,6 +457,23 @@ mark.blank { background: transparent; color: var(--faint); }
 .voice-hint { font-size: .78rem; color: var(--muted); margin: .2rem 0 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+
+/* ───── Repaso y shadowing ───── */
+.review-banner { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; margin: 1.2rem 0 .2rem; padding: .8rem 1rem; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-soft); color: var(--text); text-decoration: none; }
+.review-banner:hover { filter: brightness(1.08); }
+.review-banner span:nth-child(2) { flex: 1; min-width: 200px; font-size: .92rem; }
+.review-banner svg { color: var(--accent); }
+.stats a { color: var(--accent); text-decoration: none; }
+.rec-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.rec-row .btn { min-height: 44px; }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--bad); display: inline-block; }
+[data-rec][aria-pressed="true"] { border-color: var(--bad); color: var(--bad); }
+[data-rec][aria-pressed="true"] .rec-dot { animation: blink 1s steps(1) infinite; }
+
+.brand { flex: none; }
+.brand-text { white-space: nowrap; }
+@media (max-width: 1180px) { .stats .opt-stat { display: none; } }
+
 /* ───── Móvil ───── */
 @media (max-width: 640px) {
   .hero { padding: 2rem 0 1.5rem; }

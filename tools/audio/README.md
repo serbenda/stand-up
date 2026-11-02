@@ -21,7 +21,7 @@ La clave es un hash del texto, el mismo que calcula `js/app.js`. Si un texto no 
 ```sh
 node tools/audio/export.js > /tmp/texts.json
 python3 tools/audio/generate.py /tmp/texts.json audio
-node tools/audio/manifest.js
+node tools/audio/manifest.js /tmp/texts.json   # con la lista, borra además las grabaciones sin uso
 ```
 
 `generate.py` solo crea los mp3 que faltan, así que añadir frases nuevas es rápido.

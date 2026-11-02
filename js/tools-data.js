@@ -25,7 +25,7 @@ window.TERMS = [
   { cat: "tools", term: "Terraform", sounds: "TÉ-ra-form" },
   { cat: "tools", term: "Ansible", sounds: "ÁN-si-bol", wrong: "an-SI-ble" },
   { cat: "tools", term: "Grafana", sounds: "gra-FÁ-na" },
-  { cat: "tools", term: "Postgres", sounds: "PÓUST-gres" },
+  { cat: "tools", term: "Postgres", sounds: "PÓUST-gres", say: "post gress", note: "También «Postgres-Q-L»." },
   { cat: "tools", term: "Ubuntu", sounds: "u-BÚN-tu" },
   { cat: "tools", term: "Linux", sounds: "LÍ-nux", wrong: "LÁI-nux" },
   { cat: "tools", term: "Python", sounds: "PÁI-zon", wrong: "PI-ton", note: "La «th» suena como la «z» de España." },
@@ -47,10 +47,10 @@ window.TERMS = [
   { cat: "cloud", term: "Oracle", sounds: "Ó-ra-kol", wrong: "o-RA-cle" },
 
   // Código
-  { cat: "code", term: "data", sounds: "DÉI-ta (EE. UU.) · DÁ-ta (R. U.)" },
+  { cat: "code", term: "data", sounds: "DÉI-ta", note: "Es lo más común a los dos lados del Atlántico. «DÁ-ta» también se oye." },
   { cat: "code", term: "query", sounds: "KUÍ-ri", wrong: "KÉ-ri" },
   { cat: "code", term: "char", sounds: "char · kar", note: "Las dos se oyen. «Char» como «charcoal» es lo más común." },
-  { cat: "code", term: "regex", sounds: "RÉ-yex", note: "También «RÉ-gex» con «g» dura." },
+  { cat: "code", term: "regex", sounds: "RÉ-yex", say: "redge ex", note: "También «RÉ-gex» con «g» dura." },
   { cat: "code", term: "integer", sounds: "ÍN-ti-yer", wrong: "in-te-GUER" },
   { cat: "code", term: "variable", sounds: "VÉ-ri-a-bol", wrong: "va-RIA-ble" },
   { cat: "code", term: "method", sounds: "MÉ-zod", wrong: "ME-tod" },
@@ -59,8 +59,8 @@ window.TERMS = [
   { cat: "code", term: "width", sounds: "uidz", wrong: "uid", note: "Termina en «th»: la lengua entre los dientes." },
   { cat: "code", term: "height", sounds: "jáit", wrong: "jéit", note: "Rima con «light»." },
   { cat: "code", term: "schema", sounds: "SKÍ-ma", wrong: "ES-que-ma" },
-  { cat: "code", term: "bug", sounds: "bag", wrong: "bug" },
-  { cat: "code", term: "debug", sounds: "di-BÁG", wrong: "DE-bug" },
+  { cat: "code", term: "bug", sounds: "bag (a corta)", wrong: "bug (con «u»)", note: "La vocal es corta y apagada, como en «up». No es «bag» (bolsa)." },
+  { cat: "code", term: "debug", sounds: "di-BÁG", wrong: "DE-bug", say: "dee bug" },
   { cat: "code", term: "binary", sounds: "BÁI-na-ri", wrong: "bi-NA-ri" },
 
   // Palabras trampa: el acento cae donde no esperas
@@ -92,18 +92,30 @@ window.DAILY = {
     "I worked on …",
     "I fixed …",
     "I reviewed …",
+    "I merged …",
+    "I opened a PR for …",
+    "I pushed a hotfix for …",
     "I investigated …",
     "I paired with … on …",
     "I had meetings most of the day."
   ],
   today: [
     "I'll continue with …",
+    "I'm still on …",
+    "I'm wrapping up …",
     "I'll work on …",
     "I'll review …",
     "I'll test …",
     "I'll deploy … to staging.",
     "I'll pair with …",
     "I'm on call today."
+  ],
+  eta: [
+    "",
+    "It should be done by …",
+    "I'll have a PR up by …",
+    "It's taking longer than expected.",
+    "No ETA yet. I'll update you tomorrow."
   ],
   blockers: [
     "No blockers.",
@@ -129,15 +141,20 @@ window.CHEATS = [
       { en: "What happens if this is null?", es: "¿Qué pasa si esto es null?" },
       { en: "Nice catch!", es: "¡Bien visto!" },
       { en: "Good point, fixed.", es: "Buen apunte, corregido." },
-      { en: "Addressed your comments. Could you take another look?", es: "He resuelto tus comentarios. ¿Le echas otro vistazo?" }
+      { en: "Addressed your comments. Could you take another look?", es: "He resuelto tus comentarios. ¿Le echas otro vistazo?" },
+      { en: "Approved with minor comments.", es: "Aprobado, con comentarios menores." },
+      { en: "Can you rebase onto main?", es: "¿Puedes hacer rebase sobre main?" },
+      { en: "This might break backwards compatibility.", es: "Esto podría romper la compatibilidad hacia atrás." },
+      { en: "Could you add some context to the description?", es: "¿Puedes añadir contexto a la descripción de la PR?" },
+      { en: "Feel free to ignore, just a thought.", es: "Si quieres, ignóralo: es solo una idea." }
     ]
   },
   {
     id: "slack", title: "Slack",
     items: [
+      { en: "Hi Ana! Quick question about the deploy: ", es: "Saluda y pregunta en el mismo mensaje. No envíes solo «Hi» y esperes: es la norma «no hello»." },
       { en: "Got it, thanks.", es: "Entendido, gracias." },
       { en: "On it.", es: "Me pongo con ello." },
-      { en: "Quick question: ", es: "Una pregunta rápida: …" },
       { en: "No rush.", es: "Sin prisa." },
       { en: "Sorry, I missed this.", es: "Perdona, se me pasó." },
       { en: "Can we jump on a quick call?", es: "¿Hacemos una llamada rápida?" },
@@ -150,7 +167,8 @@ window.CHEATS = [
     id: "email", title: "Correos",
     items: [
       { en: "Hi all, quick update on ", es: "Hola a todos, una actualización rápida sobre …" },
-      { en: "Please find the report attached.", es: "Te adjunto el informe." },
+      { en: "I've attached the report.", es: "Te adjunto el informe." },
+      { en: "Just bumping this up.", es: "Lo vuelvo a subir (recordatorio suave)." },
       { en: "Just following up on this.", es: "Te escribo para hacer seguimiento." },
       { en: "Could you confirm by Friday?", es: "¿Puedes confirmarlo como tarde el viernes?" },
       { en: "Looping in Ana, who owns this.", es: "Añado a Ana, que es la responsable." },
@@ -170,6 +188,23 @@ window.CHEATS = [
       { en: "Can you share your screen?", es: "¿Puedes compartir pantalla?" },
       { en: "Let's take it offline.", es: "Lo hablamos aparte." },
       { en: "I need to drop off in five minutes.", es: "Tengo que salirme en cinco minutos." }
+    ]
+  },
+  {
+    id: "acronyms", title: "Sprint y siglas",
+    items: [
+      { en: "ETA", say: "E. T. A.", es: "Estimated time of arrival: fecha u hora estimada." },
+      { en: "EOD", es: "End of day: antes de que acabe el día." },
+      { en: "OOO", es: "Out of office: fuera de la oficina." },
+      { en: "WFH", es: "Working from home: teletrabajando." },
+      { en: "FYI", es: "For your information: para que lo sepas." },
+      { en: "ASAP", es: "As soon as possible: cuanto antes." },
+      { en: "TL;DR", say: "T. L. D. R.", es: "Too long; didn't read: resumen corto al principio de un texto largo." },
+      { en: "PTAL", say: "P. T. A. L.", es: "Please take another look: revísalo otra vez (en PR)." },
+      { en: "WIP", es: "Work in progress: sin terminar, no lo fusiones aún." },
+      { en: "This ticket is in the current sprint.", es: "Este ticket está en el sprint actual." },
+      { en: "It's a three-point story.", es: "Es una historia de tres puntos (estimación)." },
+      { en: "We need a hotfix.", es: "Necesitamos un arreglo urgente en producción." }
     ]
   },
   {
