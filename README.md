@@ -10,30 +10,33 @@ Tech English para hispanohablantes: el inglés que se habla en equipos técnicos
 
 La portada pregunta **qué quieres conseguir** y te lleva a una ruta:
 
-| Ruta | Estado |
+| Ruta | Unidades |
 |---|---|
-| 01 · Sobrevivir al día a día del equipo (Daily stand-up, Slack y correo, Reuniones) | ✅ disponible |
-| 02 · Pasar entrevistas | próximamente |
+| 01 · Sobrevivir al día a día del equipo | Daily stand-up · Slack y correo · Reuniones · Números, fechas y siglas |
+| 02 · Pasar entrevistas | Preséntate · Cuenta un proyecto · Preguntas difíciles y tus preguntas |
 | 03 · Explicar ideas técnicas | próximamente |
 | 04 · Incidencias y code review | próximamente |
-| 05 · Errores que delatan al hispanohablante | próximamente |
+| 05 · Errores que delatan al hispanohablante | Tiempos verbales · Suavizar el tono · Falsos amigos |
 
-Cada ruta tiene unidades, y cada unidad tres lecciones de nivel A2, B1 y B2 con seis frases de 2 a 7 palabras. Una lección mezcla estos ejercicios:
+23 lecciones de nivel A2 a C1, con seis frases cortas cada una. Una lección mezcla estos ejercicios:
 
 - **Frase nueva**: la escuchas, ves la traducción y una nota de uso.
 - **Escucha**: eliges lo que has oído. Las opciones falsas cambian una sola palabra.
 - **Completa**: eliges la palabra que falta.
 - **Traduce**: construyes la frase tocando palabras, sin escribir.
 - **Empareja**: cuatro frases con su traducción.
+- **Repite en voz alta** (*shadowing*): escuchas, repites imitando el ritmo y, si quieres, te grabas para compararte. La grabación no sale de tu navegador.
 - **Situación**: alguien te escribe y eliges la mejor respuesta.
 
-Las opciones falsas son **errores típicos de hispanohablantes**: *actually*, *assist*, *revision*, *resume*, *until* en lugar de *by*, *I'm agree*… Cada fallo explica el porqué y la frase vuelve al final de la lección.
+Las opciones falsas son **errores típicos de hispanohablantes**: *actually*, *revision*, *resume*, *until* en lugar de *by*, *I'm agree*, *I have finished it yesterday*… Cada fallo explica el porqué y la frase vuelve al final de la lección.
+
+**Repaso espaciado:** cada frase va a una caja. Si la aciertas, vuelve dentro de 3, 7, 14, 30 o 60 días; si la fallas, mañana. La portada te avisa de las que toca repasar.
 
 ## Herramientas para el día a día
 
 - **Pronunciar** (`#/say`): 55 términos técnicos con audio, cómo suenan «a la española» y el error típico. *Cache* → «cash», *nginx* → «én-yin-ex», *deploy* → «di-PLÓI»…
-- **Mi daily** (`#/daily`): eliges qué hiciste ayer, qué harás hoy y tus bloqueos, rellenas los huecos y te monta el stand-up en inglés. Se puede escuchar y copiar, y se guarda para el día siguiente.
-- **Chuletas** (`#/cheats`): frases para copiar en comentarios de PR, Slack, correos, reuniones e incidencias.
+- **Mi daily** (`#/daily`): eliges qué hiciste ayer, qué harás hoy, el plazo y tus bloqueos, rellenas los huecos y te monta el stand-up en inglés. Se puede escuchar y copiar, y se guarda para el día siguiente.
+- **Chuletas** (`#/cheats`): frases para copiar en comentarios de PR, Slack, correos, reuniones e incidencias, más las siglas de sprint (ETA, OOO, PTAL, WIP…).
 
 ## Detalles
 
@@ -66,6 +69,7 @@ Todo está en [`js/content.js`](js/content.js): rutas → unidades → lecciones
 - `gap`: palabra que se quita en «Completa» (tiene que aparecer tal cual en `en`).
 - `wrong`: tres opciones falsas, mejor si son errores típicos.
 - `note`: explicación corta (opcional).
+- `say`: texto para el audio cuando se lee distinto de como se escribe, por ejemplo `"Uptime is ninety-nine point nine percent."` (opcional).
 
 Cada lección puede tener una `scene` con un mensaje y varias respuestas `{ en, ok, why }`.
 

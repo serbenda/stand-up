@@ -12,13 +12,13 @@ const add = (text, role = "narrator", say) => {
   if (!out.has(key)) out.set(key, { key, text: t, say: (say || t).trim(), role });
 };
 for (const r of window.ROUTES) for (const u of r.units) for (const l of u.lessons) {
-  l.items.forEach(it => add(it.en));
+  l.items.forEach(it => add(it.say || it.en));
   if (l.scene) {
     add(l.scene.text, MALE.has(l.scene.who) ? "male" : "female");
     l.scene.options.forEach(o => add(o.en));
   }
 }
 window.TERMS.forEach(t => add(t.say || t.term, "narrator"));
-window.CHEATS.forEach(c => c.items.forEach(it => add(it.en)));
+window.CHEATS.forEach(c => c.items.forEach(it => add(it.say || it.en)));
 add("Quick update: the cache is in the queue. Let's take it offline.");
 console.log(JSON.stringify([...out.values()], null, 0));

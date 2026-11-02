@@ -20,7 +20,8 @@ ACCENTS = {
     "gb": {"lang": "en-gb", "narrator": "bf_emma", "female": "bf_emma", "male": "bm_george"},
 }
 
-PUNCT = re.compile(r"([,.!?;:…—]+)")
+# El punto no corta si va detrás de una mayúscula sola (siglas como «A. W. S.» o «QA.»)
+PUNCT = re.compile(r"((?<![A-Z])[.]+|[,!?;:…—]+)")
 
 
 def espeak(text, lang):

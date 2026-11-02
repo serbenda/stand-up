@@ -16,6 +16,7 @@
     lessonById[lesson.id] = lesson;
   })));
   const ALL_ITEMS = LESSONS.flatMap(l => l.items);
+  const spoken = it => it.say || it.en; // texto que se manda al audio
 
   /* ═════════════ Utilidades ═════════════ */
   const $ = (s, el = document) => el.querySelector(s);
@@ -47,7 +48,7 @@
 
   const DEFAULTS = { theme: "dark", font: "lexend", size: "m", spacing: "wide", accent: "en-GB", voiceMode: "recorded", voiceName: "", rate: 0.95, autoplay: true, highlight: true, ruler: false };
   const settings = Object.assign({}, DEFAULTS, store.get("settings", {}));
-  const prog = Object.assign({ lessons: {}, seen: {}, xp: 0, log: {} }, store.get("progress", {}));
+  const prog = Object.assign({ lessons: {}, seen: {}, xp: 0, log: {}, srs: {} }, store.get("progress", {}));
   const saveProg = () => store.set("progress", prog);
 
   const streak = () => {
@@ -60,8 +61,24 @@
   const lessonDone = l => !!(prog.lessons[l.id] && prog.lessons[l.id].done);
   const nextLesson = () => LESSONS.find(l => !lessonDone(l)) || LESSONS[0];
 
+  // Cada frase va en una caja: si aciertas sube y vuelve más tarde; si fallas, mañana otra vez
+  const SRS_DAYS = [0, 1, 3, 7, 14, 30, 60];
+  function srsUpdate(key, ok) {
+    const cur = prog.srs[key];
+    const box = ok ? Math.min(SRS_DAYS.length - 1, (cur ? cur.box : 0) + 1) : 1;
+    const d = new Date(); d.setDate(d.getDate() + SRS_DAYS[box]);
+    prog.srs[key] = { box, due: dayKey(d) };
+  }
+  const dueItems = () => ALL_ITEMS
+    .filter(it => prog.srs[it.key] && prog.srs[it.key].due <= dayKey())
+    .sort((a, b) => prog.srs[a.key].due.localeCompare(prog.srs[b.key].due) || prog.srs[a.key].box - prog.srs[b.key].box);
+  const REVIEW_MAX = 12;
+  // Quien ya practicó antes de existir el repaso: sus frases entran hoy en la primera caja
+  ALL_ITEMS.forEach(it => { if (prog.seen[it.key] && !prog.srs[it.key]) prog.srs[it.key] = { box: 1, due: dayKey() }; });
+
   function renderStats() {
-    $("#stats").innerHTML = `<b>${prog.xp}</b> xp · <b>${streak()}</b> ${streak() === 1 ? "día" : "días"} · <b>${learnedCount()}</b>/${ALL_ITEMS.length} frases`;
+    const due = dueItems().length;
+    $("#stats").innerHTML = `<span class="opt-stat"><b>${prog.xp}</b> xp · <b>${streak()}</b> ${streak() === 1 ? "día" : "días"} · <b>${learnedCount()}</b>/${ALL_ITEMS.length} frases</span>${due ? `<span class="opt-stat"> · </span><a href="#/l/review"><b>${due}</b> por repasar</a>` : ""}`;
   }
 
   let toastTimer;
@@ -280,6 +297,10 @@
         <span class="label mono">while (!fluent) { practice(); }</span>
         <h1>El inglés que se habla en equipos técnicos.</h1>
         <p class="lead">Frases cortas y reales para dailies, Slack, reuniones, entrevistas e incidencias. Lecciones de tres minutos, con audio y sin registro.</p>
+        ${dueItems().length ? `<a class="review-banner" href="#/l/review">
+          <span class="label mono">$ git pull --review</span>
+          <span><b>Repaso de hoy:</b> ${Math.min(dueItems().length, REVIEW_MAX)} frases que estás a punto de olvidar. Dos minutos.</span>
+          ${ICON.chev}</a>` : ""}
         <div class="hero-actions">
           <a class="btn btn-primary" href="#/l/${nl.id}">${started ? "Continuar" : "Empezar"}: ${esc(nl.unit.title)} · ${esc(nl.title)} ${ICON.chev}</a>
           <a class="btn btn-ghost" href="#/r/${nl.route.id}">Ver la ruta</a>
@@ -388,7 +409,7 @@
     if (!b || L) return;
     const key = b.dataset.say || b.dataset.saySlow;
     const it = itemByKey[key];
-    if (it) speak(it.en, b.closest(".phrase") && $(".en", b.closest(".phrase")), !!b.dataset.saySlow);
+    if (it) speak(spoken(it), b.closest(".phrase") && $(".en", b.closest(".phrase")), !!b.dataset.saySlow);
   });
 
   /* ═════════════ Terminal animada de la portada ═════════════ */
@@ -581,11 +602,13 @@ cd: no such file or directory</pre>
   const SECTIONS = [
     { id: "yesterday", title: "Ayer", lead: "Yesterday, " },
     { id: "today", title: "Hoy", lead: "Today, " },
+    { id: "eta", title: "Plazo (opcional)", lead: "" },
     { id: "blockers", title: "Bloqueos", lead: "" }
   ];
   const daily = Object.assign({
     yesterday: [{ t: 0, v: [] }],
     today: [{ t: 0, v: [] }],
+    eta: [{ t: 0, v: [] }],
     blockers: [{ t: 0, v: [] }]
   }, store.get("daily", {}));
   const saveDaily = () => store.set("daily", daily);
@@ -611,7 +634,7 @@ cd: no such file or directory</pre>
         const tpl = DAILY[sec.id][line.t];
         if (!tpl) return;
         let s = fill(tpl, line.v, forDisplay);
-        if (i > 0 && sec.id !== "blockers") s = addAlso(s);
+        if (i > 0 && sec.id !== "blockers" && sec.id !== "eta") s = addAlso(s);
         if (i === 0 && sec.lead && !/today|yesterday/i.test(s)) s = sec.lead + s;
         out.push(s);
       });
@@ -661,7 +684,7 @@ cd: no such file or directory</pre>
     const n = blanks(tpl);
     return `<div class="daily-line" data-daily-line data-sec="${sec}" data-i="${i}">
       <select aria-label="Frase" data-role="tpl" lang="en">
-        ${DAILY[sec].map((t, k) => `<option value="${k}" ${k === line.t ? "selected" : ""}>${esc(t)}</option>`).join("")}
+        ${DAILY[sec].map((t, k) => `<option value="${k}" ${k === line.t ? "selected" : ""}>${t ? esc(t) : "— Sin plazo —"}</option>`).join("")}
       </select>
       ${Array.from({ length: n }, (_, k) => `<input type="text" data-role="blank" data-k="${k}" lang="en" value="${esc(line.v[k] || "")}" placeholder="${k === 0 ? "the Terraform module" : "the DNS issue"}" aria-label="Hueco ${k + 1}" autocomplete="off" spellcheck="true">`).join("")}
       ${daily[sec].length > 1 ? `<button class="icon-btn" data-remove-line aria-label="Quitar esta frase">${ICON.close}</button>` : ""}
@@ -735,7 +758,7 @@ cd: no such file or directory</pre>
       return `<section class="unit cheat" id="cheat-${c.id}" aria-labelledby="ch-${c.id}">
         <div class="unit-head"><h2 id="ch-${c.id}">${esc(c.title)}</h2><span class="meter-txt">${items.length}</span></div>
         ${items.map(it => `<div class="cheat-row" data-speak-host>
-          <button class="audio-btn" data-speak="${esc(it.en.trim())}" aria-label="Escuchar">${ICON.play}</button>
+          <button class="audio-btn" data-speak="${esc((it.say || it.en).trim())}" aria-label="Escuchar">${ICON.play}</button>
           <div><p class="en speak-target" lang="en">${esc(it.en)}</p><p class="es">${esc(it.es)}</p></div>
           <button class="btn btn-ghost copy-btn" data-copy="${esc(it.en)}" aria-label="Copiar: ${esc(it.en)}">Copiar</button>
         </div>`).join("")}
@@ -759,6 +782,14 @@ cd: no such file or directory</pre>
 
   function buildQueue(lesson) {
     const items = lesson.items, q = [];
+    if (lesson.review) {
+      const kinds = ["listen", "gap", "build", "gap", "build", "listen"];
+      shuffle(items).forEach((it, k) => q.push(makeExercise(kinds[k % kinds.length], it)));
+      if (items.length >= 4) q.push(makeExercise("match", null, { items: shuffle(items).slice(0, 4) }));
+      const longest = items.slice().sort((a, b) => b.en.length - a.en.length)[0];
+      if (longest) q.push(makeExercise("shadow", longest));
+      return q;
+    }
     const kinds = ["listen", "gap", "build"];
     items.forEach((it, k) => {
       if (!prog.seen[it.key]) q.push(makeExercise("intro", it));
@@ -766,13 +797,21 @@ cd: no such file or directory</pre>
     });
     q.push(makeExercise("match", null, { items: shuffle(items).slice(0, 4) }));
     shuffle(items.filter((_, k) => k % 3 !== 2)).slice(0, 2).forEach(it => q.push(makeExercise("build", it)));
+    // Repetir en voz alta las dos frases más largas: es lo que más se parece a hablar en la daily
+    items.slice().sort((a, b) => b.en.length - a.en.length).slice(0, 2).forEach(it => q.push(makeExercise("shadow", it)));
     if (lesson.scene) q.push(makeExercise("scene", null, { scene: lesson.scene }));
     return q;
   }
 
+  function reviewLesson() {
+    const items = dueItems().slice(0, REVIEW_MAX);
+    if (!items.length) return null;
+    return { id: "review", review: true, title: "Repaso del día", level: "", num: 0, items, unit: { title: "Repaso" }, route: null };
+  }
+
   function startLesson(id) {
-    const lesson = lessonById[id];
-    if (!lesson) return renderHome();
+    const lesson = id === "review" ? reviewLesson() : lessonById[id];
+    if (!lesson) { if (id === "review") toast("Nada que repasar hoy. Vuelve mañana."); location.replace("#/"); return; }
     L = { lesson, queue: buildQueue(lesson), pos: 0, graded: 0, correct: 0, missed: new Set(), state: null };
     document.body.classList.add("in-lesson");
     renderExercise();
@@ -780,6 +819,7 @@ cd: no such file or directory</pre>
 
   function leaveLesson(to) {
     stopAudio();
+    stopRecording(true);
     L = null;
     document.body.classList.remove("in-lesson");
     location.hash = to || "#/";
@@ -808,7 +848,7 @@ cd: no such file or directory</pre>
     if (ex.type === "build") {
       const target = tokens(it.en);
       const lowerSet = new Set(target.map(normTok));
-      const decoys = shuffle(it.wrong.filter(w => !lowerSet.has(normTok(w)))).slice(0, 2);
+      const decoys = shuffle(it.wrong.filter(w => !w.includes(" ") && !lowerSet.has(normTok(w)))).slice(0, 2);
       ex.target = target;
       ex.tiles = shuffle([...target, ...decoys]).map((w, i) => ({ w, i }));
       ex.picked = [];
@@ -824,7 +864,7 @@ cd: no such file or directory</pre>
     ex.choice = null;
   }
 
-  const KIND = { intro: "Frase nueva", listen: "Escucha", gap: "Completa", build: "Traduce", match: "Empareja", scene: "Situación" };
+  const KIND = { intro: "Frase nueva", listen: "Escucha", gap: "Completa", build: "Traduce", match: "Empareja", scene: "Situación", shadow: "Repite en voz alta" };
 
   function renderExercise() {
     const ex = L.queue[L.pos];
@@ -841,6 +881,21 @@ cd: no such file or directory</pre>
         <p class="es">${esc(it.es)}</p>
         ${it.note ? `<p class="note">${esc(it.note)}</p>` : ""}
       </div>`;
+    }
+    if (ex.type === "shadow") {
+      const canRec = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+      body = `<h1 class="ex-title">Escúchala y repítela en voz alta</h1>
+        <div class="intro-card shadow-card">
+          <div class="prompt-row">${audioBtns("main", true)}</div>
+          <p class="en" lang="en" id="main-text">${wordsHTML(it.en)}</p>
+          <p class="es">${esc(it.es)}</p>
+          <p class="note">Imita el ritmo y la entonación, no solo las palabras. Dos o tres veces es suficiente.</p>
+          ${canRec ? `<div class="rec-row">
+            <button class="btn btn-ghost" data-rec aria-pressed="false"><span class="rec-dot" aria-hidden="true"></span> <span class="rec-label">Grabarme</span></button>
+            <button class="btn btn-ghost" data-play-mine hidden>${ICON.play} Mi versión</button>
+            <span class="hint-keys" id="rec-status" aria-live="polite"></span>
+          </div>` : ""}
+        </div>`;
     }
     if (ex.type === "listen") {
       body = `<h1 class="ex-title">¿Qué has oído?</h1>
@@ -907,7 +962,7 @@ cd: no such file or directory</pre>
     renderCheckbar();
     preloadAudio(mainText(ex));
     const nx = L.queue[L.pos + 1]; if (nx) preloadAudio(mainText(nx));
-    if (settings.autoplay && (ex.type === "intro" || ex.type === "listen")) setTimeout(() => sayMain(false), 250);
+    if (settings.autoplay && (ex.type === "intro" || ex.type === "listen" || ex.type === "shadow")) setTimeout(() => sayMain(false), 250);
     const first = $("#ex .option:not([disabled]), #ex .tile:not(.used), #checkbar .btn-primary");
     if (first) first.focus({ preventScroll: true });
   }
@@ -919,7 +974,7 @@ cd: no such file or directory</pre>
 
   function mainText(ex) {
     if (ex.type === "scene") return ex.scene.text;
-    return ex.item ? ex.item.en : "";
+    return ex.item ? spoken(ex.item) : "";
   }
 
   function sayMain(slow) {
@@ -938,8 +993,9 @@ cd: no such file or directory</pre>
     const ex = L.queue[L.pos], bar = $("#checkbar");
     bar.className = "checkbar";
     if (L.state === "answer") {
-      if (ex.type === "intro") {
-        bar.innerHTML = `<div class="checkbar-inner"><span class="hint-keys">Escúchala tantas veces como quieras</span><button class="btn btn-primary" data-continue>Continuar</button></div>`;
+      if (ex.type === "intro" || ex.type === "shadow") {
+        const hint = ex.type === "shadow" ? "Sin nota: lo que cuenta es decirlo en voz alta" : "Escúchala tantas veces como quieras";
+        bar.innerHTML = `<div class="checkbar-inner"><span class="hint-keys">${hint}</span><button class="btn btn-primary" data-continue>${ex.type === "shadow" ? "Lo he dicho" : "Continuar"}</button></div>`;
         return;
       }
       if (ex.type === "match") {
@@ -989,7 +1045,7 @@ cd: no such file or directory</pre>
       if (!ok) { const good = ex.scene.options.find(o => o.ok); answer = good.en; if (skip) why = good.why; }
     }
     finishExercise(ok, answer, why);
-    if (ex.type !== "scene" && it) setTimeout(() => speak(it.en, null, false), 150);
+    if (ex.type !== "scene" && it) setTimeout(() => speak(spoken(it), null, false), 150);
     // marcar opciones
     if (ex.type === "listen" || ex.type === "gap") {
       $$("#ex .option").forEach((b, i) => {
@@ -1026,6 +1082,7 @@ cd: no such file or directory</pre>
 
   function next() {
     const ex = L.queue[L.pos];
+    stopRecording(true);
     if (ex.type === "intro") { prog.seen[ex.item.key] = true; saveProg(); }
     if (ex.type !== "intro" && ex.item) { prog.seen[ex.item.key] = true; }
     L.pos++;
@@ -1035,16 +1092,19 @@ cd: no such file or directory</pre>
 
   function finishLesson() {
     const l = L.lesson;
-    const xp = 10 + L.correct * 2;
-    const prev = prog.lessons[l.id];
-    prog.lessons[l.id] = { done: true, best: Math.max(prev ? prev.best : 0, L.correct), total: L.graded, at: dayKey() };
+    const xp = (l.review ? 5 : 10) + L.correct * 2;
+    l.items.forEach(it => srsUpdate(it.key, !L.missed.has(it.key)));
+    if (!l.review) {
+      const prev = prog.lessons[l.id];
+      prog.lessons[l.id] = { done: true, best: Math.max(prev ? prev.best : 0, L.correct), total: L.graded, at: dayKey() };
+    }
     l.items.forEach(it => { prog.seen[it.key] = true; });
     prog.xp += xp;
     prog.log[dayKey()] = (prog.log[dayKey()] || 0) + 1;
     saveProg();
     const missed = [...L.missed].map(k => itemByKey[k]).filter(Boolean);
     const idx = LESSONS.indexOf(l);
-    const nl = LESSONS[idx + 1];
+    const nl = l.review ? (LESSONS.find(x => !lessonDone(x)) || null) : LESSONS[idx + 1];
     const correct = L.correct, graded = L.graded;
     L = null;
     document.body.classList.remove("in-lesson");
@@ -1053,18 +1113,18 @@ cd: no such file or directory</pre>
     const pct = graded ? Math.round((correct / graded) * 100) : 100;
     app.innerHTML = `
       <section class="summary">
-        <span class="label">✓ lesson passed</span>
+        <span class="label">✓ ${l.review ? "review done" : "lesson passed"}</span>
         <h1>${esc(l.title)}</h1>
         <div class="kpis">
           <div class="kpi"><span class="n">${correct}/${graded}</span><span class="l">Aciertos a la primera · ${pct}%</span></div>
           <div class="kpi"><span class="n">+${xp}</span><span class="l">XP</span></div>
           <div class="kpi"><span class="n">${l.items.length}</span><span class="l">Frases trabajadas</span></div>
         </div>
-        ${missed.length ? `<div class="review-list"><h2>Para repasar</h2>${missed.map(phraseRow).join("")}</div>` : `<p class="muted">Sin fallos. Ni un conflicto en el merge.</p>`}
+        ${missed.length ? `<div class="review-list"><h2>Para repasar · vuelven mañana</h2>${missed.map(phraseRow).join("")}</div>` : `<p class="muted">Sin fallos. Ni un conflicto en el merge. Estas frases volverán dentro de unos días para que no se olviden.</p>`}
         <div class="summary-actions">
           ${nl ? `<a class="btn btn-primary" href="#/l/${nl.id}">Siguiente: ${esc(nl.title)} ${ICON.chev}</a>` : ""}
-          <a class="btn btn-ghost" href="#/l/${l.id}" data-restart>Repetir</a>
-          <a class="btn btn-quiet" href="#/r/${l.route.id}">Volver a la ruta</a>
+          ${l.review ? "" : `<a class="btn btn-ghost" href="#/l/${l.id}" data-restart>Repetir</a>`}
+          <a class="btn btn-quiet" href="${l.route ? `#/r/${l.route.id}` : "#/"}">${l.route ? "Volver a la ruta" : "Volver al inicio"}</a>
         </div>
       </section>`;
     history.replaceState(null, "", `#/done/${l.id}`);
@@ -1075,13 +1135,15 @@ cd: no such file or directory</pre>
     if (!L) return;
     const ex = L.queue[L.pos], t = e.target;
     if (t.closest("[data-exit]")) {
-      if (L.pos === 0 || confirm("¿Salir de la lección? Se perderá lo que llevas.")) leaveLesson(`#/r/${L.lesson.route.id}`);
+      if (L.pos === 0 || confirm("¿Salir de la lección? Se perderá lo que llevas.")) leaveLesson(L.lesson.route ? `#/r/${L.lesson.route.id}` : "#/");
       return;
     }
     if (t.closest("[data-say]")) return sayMain(false);
     if (t.closest("[data-say-slow]")) return sayMain(true);
     if (t.closest("[data-toggle-es]")) { const r = $(".reveal-es"); r.hidden = !r.hidden; return; }
     if (t.closest("[data-continue]")) return next();
+    if (t.closest("[data-rec]")) return toggleRecording(t.closest("[data-rec]"));
+    if (t.closest("[data-play-mine]")) return playMine();
     if (t.closest("[data-check]")) return check(false);
     if (t.closest("[data-skip]")) return check(true);
     if (L.state !== "answer") return;
@@ -1095,6 +1157,52 @@ cd: no such file or directory</pre>
     const ml = t.closest("[data-ml]"), mr = t.closest("[data-mr]");
     if (ml || mr) matchPick(ml ? "l" : "r", (ml || mr).dataset[ml ? "ml" : "mr"]);
   });
+
+  /* ── Grabarse para compararse (todo queda en el navegador) ── */
+  const rec = { stream: null, recorder: null, chunks: [], url: null, audio: null };
+
+  async function toggleRecording(btn) {
+    const status = $("#rec-status");
+    if (rec.recorder && rec.recorder.state === "recording") { rec.recorder.stop(); return; }
+    try {
+      stopAudio();
+      rec.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      rec.chunks = [];
+      rec.recorder = new MediaRecorder(rec.stream);
+      rec.recorder.ondataavailable = e => { if (e.data.size) rec.chunks.push(e.data); };
+      rec.recorder.onstop = () => {
+        if (rec.url) URL.revokeObjectURL(rec.url);
+        rec.url = URL.createObjectURL(new Blob(rec.chunks, { type: rec.recorder.mimeType || "audio/webm" }));
+        rec.stream.getTracks().forEach(tr => tr.stop());
+        btn.setAttribute("aria-pressed", "false");
+        $(".rec-label", btn).textContent = "Grabarme otra vez";
+        const mine = $("[data-play-mine]"); if (mine) mine.hidden = false;
+        if (status) status.textContent = "Compara tu versión con la original";
+      };
+      rec.recorder.start();
+      btn.setAttribute("aria-pressed", "true");
+      $(".rec-label", btn).textContent = "Parar";
+      if (status) status.textContent = "Grabando… di la frase";
+      setTimeout(() => { if (rec.recorder && rec.recorder.state === "recording") rec.recorder.stop(); }, 12000);
+    } catch (err) {
+      if (status) status.textContent = "Sin acceso al micrófono. Puedes repetirla en voz alta igualmente.";
+    }
+  }
+
+  function playMine() {
+    if (!rec.url) return;
+    stopAudio();
+    rec.audio = new Audio(rec.url);
+    rec.audio.play().catch(() => {});
+  }
+
+  function stopRecording(discard) {
+    try { if (rec.recorder && rec.recorder.state === "recording") rec.recorder.stop(); } catch (e) { /* nada */ }
+    if (rec.stream) rec.stream.getTracks().forEach(tr => tr.stop());
+    if (rec.audio) { rec.audio.pause(); rec.audio = null; }
+    if (discard && rec.url) { URL.revokeObjectURL(rec.url); rec.url = null; }
+    rec.recorder = null; rec.stream = null;
+  }
 
   function choose(i) {
     const ex = L.queue[L.pos];
@@ -1129,7 +1237,7 @@ cd: no such file or directory</pre>
     const ex = L.queue[L.pos];
     if (ex.done.has(key)) return;
     const btn = $(`#ex [data-m${side}="${key}"]`);
-    if (side === "l") speak(itemByKey[key].en, null, false);
+    if (side === "l") speak(spoken(itemByKey[key]), null, false);
     if (!ex.sel || ex.sel.side === side) {
       $$(`#ex [data-m${side}]`).forEach(b => b.setAttribute("aria-pressed", "false"));
       btn.setAttribute("aria-pressed", "true");
@@ -1160,9 +1268,9 @@ cd: no such file or directory</pre>
     if (e.key === "Enter") {
       const t = e.target;
       // Botones que no son de respuesta (salir, audio, traducción): comportamiento normal
-      if (t.closest("[data-exit], [data-say], [data-say-slow], [data-toggle-es], [data-skip], [data-ml], [data-mr], [data-unpick]")) return;
+      if (t.closest("[data-exit], [data-say], [data-say-slow], [data-toggle-es], [data-skip], [data-ml], [data-mr], [data-unpick], [data-rec], [data-play-mine]")) return;
       e.preventDefault();
-      if (L.state === "checked" || ex.type === "intro") { next(); return; }
+      if (L.state === "checked" || ex.type === "intro" || ex.type === "shadow") { next(); return; }
       const opt = t.closest("[data-opt]");
       if (opt && ex.choice !== +opt.dataset.opt) { choose(+opt.dataset.opt); return; }
       const pk = t.closest("[data-pick]");
@@ -1186,6 +1294,7 @@ cd: no such file or directory</pre>
   /* ═════════════ Paleta de comandos ═════════════ */
   const COMMANDS = [
     { c: "continue", d: "Seguir con la siguiente lección" },
+    { c: "review", d: "Repaso del día" },
     { c: "home", d: "Ir a la portada" },
     { c: "daily", d: "Preparar mi daily" },
     { c: "pronounce", d: "Pronunciación de términos técnicos" },
@@ -1223,6 +1332,7 @@ cd: no such file or directory</pre>
     $("#palette").close();
     switch ((verb || "").toLowerCase()) {
       case "continue": location.hash = `#/l/${nextLesson().id}`; break;
+      case "review": location.hash = "#/l/review"; break;
       case "home": if (L) leaveLesson("#/"); else location.hash = "#/"; break;
       case "route": location.hash = `#/r/${arg}`; break;
       case "daily": case "pronounce": case "cheats":
@@ -1275,7 +1385,7 @@ cd: no such file or directory</pre>
     renderStats();
     const navKey = ["say", "daily", "cheats"].includes(view) ? view : (["", "r", "l"].includes(view || "") ? "learn" : null);
     $$(".nav a").forEach(a => { if (a.dataset.nav === navKey) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-    if (view === "l" && lessonById[id]) startLesson(id);
+    if (view === "l" && (lessonById[id] || id === "review")) startLesson(id);
     else if (view === "r") renderRoute(id);
     else if (view === "say") renderSay();
     else if (view === "daily") renderDailyBuilder();
