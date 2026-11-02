@@ -34,9 +34,12 @@ Las opciones falsas son **errores típicos de hispanohablantes**: *actually*, *r
 
 ## Herramientas para el día a día
 
-- **Pronunciar** (`#/say`): 55 términos técnicos con audio, cómo suenan «a la española» y el error típico. *Cache* → «cash», *nginx* → «én-yin-ex», *deploy* → «di-PLÓI»…
-- **Mi daily** (`#/daily`): eliges qué hiciste ayer, qué harás hoy, el plazo y tus bloqueos, rellenas los huecos y te monta el stand-up en inglés. Se puede escuchar y copiar, y se guarda para el día siguiente.
-- **Chuletas** (`#/cheats`): frases para copiar en comentarios de PR, Slack, correos, reuniones e incidencias, más las siglas de sprint (ETA, OOO, PTAL, WIP…).
+- **Pronunciar** (`#/say`): 902 términos con audio en 11 categorías: herramientas, lenguajes, cloud, código, redes y seguridad, datos e IA, siglas (cuáles se deletrean y cuáles se dicen como palabra), símbolos (`#`, `~`, `{}`…), acento trampa, letras mudas y palabras del trabajo. La pronunciación aproximada se calcula con la misma fonética que la voz, así texto y audio coinciden. Se genera con [`tools/terms`](tools/terms/build.py).
+- **Mi daily** (`#/daily`):
+  - *Cómo funciona*: el daily fase a fase (antes de empezar, arranque, tu turno, ayer, hoy, plazo, bloqueos, pasar el turno, turnos de otros, temas pendientes, cierre y situaciones especiales), con quién dice cada frase y audio.
+  - *Prepara el tuyo*: eliges frases, rellenas tus tareas y te monta el stand-up en inglés para escuchar y copiar.
+- **Chat** (`#/chat`): 30 mensajes de los que más llegan cada día por Teams o Slack. Eliges cómo responder y ves cuál es la mejor, cuál vale y cuál evitar, con el porqué.
+- **Chuletas** (`#/cheats`): 384 frases para copiar en 19 secciones, empezando por las *imprescindibles*: saludar, pedir, responder, aclarar, recordar, disculparse, ausencias, reuniones, PR, incidencias, correos, 1:1, entrevistas y siglas.
 
 ## Detalles
 
@@ -81,10 +84,15 @@ Para que una ruta «próximamente» pase a estar disponible, basta con rellenar 
 index.html
 css/styles.css
 js/content.js     ← rutas, lecciones y frases
-js/tools-data.js  ← pronunciación, plantillas de daily y chuletas
+js/terms.js       ← términos de Pronunciar (generado)
+js/tools-data.js  ← plantillas de Mi daily
+js/daily-guide.js ← guía del daily por fases
+js/chat.js        ← mensajes del chat del equipo
+js/cheats.js      ← chuletas
 js/audio-manifest.js ← lista de textos con grabación
 js/app.js         ← lógica
 docs/estudio.md   ← estudio de referencias
 audio/us, audio/gb ← grabaciones (mp3)
 tools/audio/      ← scripts para generar las grabaciones
+tools/terms/      ← lista de términos y generador de js/terms.js
 ```
