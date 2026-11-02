@@ -27,6 +27,7 @@
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const tokens = s => s.split(/\s+/).map(w => w.replace(/[.,!?:]+$/, "")).filter(Boolean);
   const normTok = w => w.toLowerCase().replace(/[’]/g, "'");
+  const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   const ICON = {
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
@@ -347,14 +348,19 @@
           <p>Cache, nginx, Azure, queue, deploy… ${TERMS.length} términos con audio y cómo se dicen de verdad.</p>
         </a>
         <a class="route" href="#/daily">
-          <div class="top-row"><span class="label mono">$ standup --build</span></div>
-          <h3>Prepara tu daily</h3>
-          <p>Elige qué hiciste ayer, qué harás hoy y tus bloqueos. Te lo montamos en inglés, listo para leer en voz alta.</p>
+          <div class="top-row"><span class="label mono">$ man daily-standup</span></div>
+          <h3>Domina el daily</h3>
+          <p>Cómo empieza, cómo sigue y cómo termina, fase a fase y con las frases de cada momento. Y prepara el tuyo en inglés.</p>
+        </a>
+        <a class="route" href="#/chat">
+          <div class="top-row"><span class="label mono">$ chat --team</span></div>
+          <h3>Chat del equipo</h3>
+          <p>${(window.CHAT || []).length} mensajes que te llegan cada día por Teams o Slack. Elige cómo responder y aprende por qué.</p>
         </a>
         <a class="route" href="#/cheats">
           <div class="top-row"><span class="label mono">$ cat cheatsheet.md</span></div>
           <h3>Chuletas para copiar</h3>
-          <p>Comentarios de PR, Slack, correos, reuniones e incidencias. Copiar, pegar y listo.</p>
+          <p>${(window.CHEATS || []).reduce((n, c) => n + c.items.length, 0)} frases para Slack, Teams, correos, reuniones, PR e incidencias. Empieza por las imprescindibles.</p>
         </a>
       </div>`;
   }
@@ -549,7 +555,7 @@ cd: no such file or directory</pre>
     <button class="audio-btn slow" data-speak="${esc(text)}" data-slow aria-label="Escuchar despacio">0.75×</button>`;
 
   /* ── Pronunciación ── */
-  const sayState = { cat: null, q: "" };
+  const sayState = { cat: null, q: "", shown: 60 };
 
   function renderSay() {
     app.innerHTML = `
@@ -557,7 +563,7 @@ cd: no such file or directory</pre>
       <header class="route-head">
         <span class="label mono">$ say --correctly</span>
         <h1>Pronuncia bien los términos técnicos</h1>
-        <p class="lead">Palabras que se dicen mal durante años porque nadie te corrige. La sílaba fuerte va en MAYÚSCULAS y la pronunciación es aproximada, para leer «a la española».</p>
+        <p class="lead">${TERMS.length} palabras que se dicen mal durante años porque nadie te corrige: herramientas, siglas, símbolos, letras mudas y palabras del trabajo. La sílaba fuerte va en MAYÚSCULAS y la pronunciación es aproximada, para leer «a la española». Escúchala siempre: el audio manda.</p>
       </header>
       <div class="toolbar">
         <div class="seg" role="group" aria-label="Categoría">
@@ -566,14 +572,24 @@ cd: no such file or directory</pre>
         </div>
         <div class="search-box"><span class="mono prompt" aria-hidden="true">grep</span><input id="term-search" type="search" placeholder="cache, deploy…" value="${esc(sayState.q)}" aria-label="Buscar término" autocomplete="off"></div>
       </div>
+      <p class="count mono" id="terms-count" aria-live="polite"></p>
       <div class="terms" id="terms"></div>`;
     renderTerms();
   }
 
-  function renderTerms() {
-    const q = sayState.q.trim().toLowerCase();
-    const list = TERMS.filter(t => (!sayState.cat || t.cat === sayState.cat) && (!q || t.term.toLowerCase().includes(q)));
-    $("#terms").innerHTML = list.length ? list.map(t => `
+  const TERMS_PAGE = 60;
+
+  function renderTerms(more) {
+    const q = norm(sayState.q.trim());
+    const list = TERMS.filter(t => (!sayState.cat || t.cat === sayState.cat) &&
+      (!q || norm(t.term).includes(q) || norm(t.sounds).includes(q) || (t.note && norm(t.note).includes(q))));
+    sayState.shown = more ? sayState.shown + TERMS_PAGE : TERMS_PAGE;
+    const shown = list.slice(0, sayState.shown);
+    const count = $("#terms-count");
+    if (count) count.textContent = `${list.length} ${list.length === 1 ? "término" : "términos"}`;
+    const moreBtn = list.length > shown.length
+      ? `<div class="more-row"><button class="btn btn-ghost" data-more-terms>Ver más · quedan ${list.length - shown.length}</button></div>` : "";
+    $("#terms").innerHTML = list.length ? shown.map(t => `
       <article class="term" data-speak-host>
         <div class="term-head">
           <h3 class="speak-target" lang="en">${esc(t.term)}</h3>
@@ -582,10 +598,18 @@ cd: no such file or directory</pre>
         <p class="sounds"><span class="label">suena</span> ${esc(t.sounds)}</p>
         ${t.wrong ? `<p class="wrong-say"><span class="label">no</span> ${esc(t.wrong)}</p>` : ""}
         ${t.note ? `<p class="term-note">${esc(t.note)}</p>` : ""}
-      </article>`).join("") : `<p class="muted">Sin resultados. ¿Echas uno de menos? Propónlo en GitHub.</p>`;
+      </article>`).join("") + moreBtn : `<p class="muted">Sin resultados. ¿Echas uno de menos? Propónlo en GitHub.</p>`;
   }
 
   app.addEventListener("click", e => {
+    if (e.target.closest("[data-more-terms]")) {
+      const y = window.scrollY;
+      renderTerms(true);
+      window.scrollTo({ top: y });
+      const cards = $$("#terms .term"); const first = cards[sayState.shown - TERMS_PAGE];
+      if (first) { const b = $("[data-speak]", first); if (b) b.focus({ preventScroll: true }); }
+      return;
+    }
     const c = e.target.closest("[data-term-cat]");
     if (!c) return;
     sayState.cat = c.dataset.termCat || null;
@@ -649,13 +673,64 @@ cd: no such file or directory</pre>
       .replace(/\u0003/g, '<mark class="blank">___</mark>');
   }
 
-  function renderDailyBuilder() {
-    app.innerHTML = `
+  const dailyTabs = active => `
       <nav class="crumbs" aria-label="Migas"><a href="#/">Inicio</a><span aria-hidden="true">/</span><span>mi daily</span></nav>
+      <div class="tabs-row" role="tablist" aria-label="Mi daily">
+        <a role="tab" class="tab-link" href="#/daily" aria-selected="${active === "guide"}">Cómo funciona</a>
+        <a role="tab" class="tab-link" href="#/daily/build" aria-selected="${active === "build"}">Prepara el tuyo</a>
+      </div>`;
+
+  const WHO = { facilitator: "Facilitador", you: "Tú", others: "Otros" };
+
+  function renderDailyGuide() {
+    const G = window.DAILY_GUIDE || [];
+    app.innerHTML = `${dailyTabs("guide")}
+      <header class="route-head">
+        <span class="label mono">$ man daily-standup</span>
+        <h1>Cómo es un daily, de principio a fin</h1>
+        <p class="lead">Unos 15 minutos, de pie o en llamada. Cada persona cuenta en 30 segundos qué hizo ayer, qué hará hoy y si algo le bloquea. Estas son las fases y lo que se dice en cada una.</p>
+      </header>
+      <ol class="phase-map" aria-label="Fases">
+        ${G.map((p, i) => `<li><a href="#/daily" data-phase="${p.id}"><span class="num mono">${String(i + 1).padStart(2, "0")}</span>${esc(p.title)}</a></li>`).join("")}
+      </ol>
+      <div class="phases">
+        ${G.map((p, i) => `
+          <section class="phase" id="phase-${p.id}" aria-labelledby="ph-${p.id}">
+            <div class="phase-rail" aria-hidden="true"><span class="dot mono">${String(i + 1).padStart(2, "0")}</span></div>
+            <div class="phase-body">
+              <div class="phase-head"><h2 id="ph-${p.id}">${esc(p.title)}</h2><span class="pill">${esc(p.time)}</span></div>
+              <p>${esc(p.what)}</p>
+              <p class="note">${esc(p.tip)}</p>
+              <div class="phase-lines">
+                ${p.phrases.map(ph => `<div class="cheat-row phase-line" data-speak-host>
+                  <button class="audio-btn" data-speak="${esc(ph.en)}" aria-label="Escuchar">${ICON.play}</button>
+                  <div><p class="who-tag">${WHO[ph.who] || ""}</p><p class="en speak-target" lang="en">${esc(ph.en)}</p><p class="es">${esc(ph.es)}</p></div>
+                  <button class="btn btn-ghost copy-btn" data-copy="${esc(ph.en)}" aria-label="Copiar: ${esc(ph.en)}">Copiar</button>
+                </div>`).join("")}
+              </div>
+            </div>
+          </section>`).join("")}
+      </div>
+      <div class="guide-cta">
+        <p><b>¿Listo para el tuyo?</b> Prepara tu actualización con tus tareas y léela en voz alta antes de entrar.</p>
+        <a class="btn btn-primary" href="#/daily/build">Prepara el tuyo ${ICON.chev}</a>
+      </div>`;
+  }
+
+  app.addEventListener("click", e => {
+    const ph = e.target.closest("[data-phase]");
+    if (!ph) return;
+    e.preventDefault();
+    const sec = $(`#phase-${ph.dataset.phase}`);
+    if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  function renderDailyBuilder() {
+    app.innerHTML = `${dailyTabs("build")}
       <header class="route-head">
         <span class="label mono">$ standup --build</span>
         <h1>Prepara tu daily en inglés</h1>
-        <p class="lead">Elige una frase para cada parte y completa los huecos con el nombre de tu tarea, tal cual: «the Terraform module», «Ana's PR», «the DNS issue». Se guarda en este navegador para mañana.</p>
+        <p class="lead">Elige una frase para cada parte y completa los huecos con el nombre de tu tarea, tal cual: «the Terraform module», «Ana's PR», «the DNS issue». Se guarda en este navegador para mañana. ¿Dudas sobre el orden? Mira <a href="#/daily">cómo funciona</a>.</p>
       </header>
       <div class="daily-grid">
         <div class="daily-form">
@@ -729,6 +804,84 @@ cd: no such file or directory</pre>
     const ds = e.target.closest("[data-daily-say]");
     if (ds) { speak(composeDaily(false).replace(/___/g, "something"), null, ds.hasAttribute("data-slow")); return; }
     if (e.target.closest("[data-daily-copy]")) copyText(composeDaily(false), e.target.closest("[data-daily-copy]"));
+  });
+
+  /* ── Chat del equipo ── */
+  const CHAT = window.CHAT || [];
+  const chatState = { i: 0, pick: null };
+  const RATE = { best: "La mejor", ok: "Válida", avoid: "Evítala" };
+  const initials = n => n.split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+
+  function renderChat() {
+    const done = new Set(store.get("chatDone", []));
+    const m = CHAT[chatState.i];
+    if (!m) { chatState.i = 0; return renderChat(); }
+    const order = chatState.order && chatState.order.i === chatState.i ? chatState.order.o : shuffle(m.replies.map((_, k) => k));
+    chatState.order = { i: chatState.i, o: order };
+    const picked = chatState.pick;
+    app.innerHTML = `
+      <nav class="crumbs" aria-label="Migas"><a href="#/">Inicio</a><span aria-hidden="true">/</span><span>chat</span></nav>
+      <header class="route-head">
+        <span class="label mono">$ chat --team</span>
+        <h1>Chat del equipo</h1>
+        <p class="lead">Los mensajes que más llegan cada día por Teams o Slack. Lee, escucha y elige cómo responderías: te decimos cuál es la mejor y por qué.</p>
+      </header>
+      <div class="chatsim">
+        <aside class="chat-list" aria-label="Conversaciones">
+          <p class="label">${done.size}/${CHAT.length} respondidas</p>
+          <ul>
+            ${CHAT.map((c, k) => `<li><button class="chat-item${k === chatState.i ? " on" : ""}" data-chat-open="${k}" aria-current="${k === chatState.i}">
+              <span class="avatar sm" aria-hidden="true">${initials(c.who)}</span>
+              <span class="ci-text"><b>${esc(c.who)}</b><span>${esc(c.text)}</span></span>
+              ${done.has(k) ? '<span class="ci-done" aria-label="respondida">✓</span>' : '<span class="ci-new" aria-label="sin responder"></span>'}
+            </button></li>`).join("")}
+          </ul>
+        </aside>
+        <section class="chat-pane" aria-label="Conversación con ${esc(m.who)}" data-speak-host>
+          <div class="chat-pane-head"><span class="avatar" aria-hidden="true">${initials(m.who)}</span><div><b>${esc(m.who)}</b><span class="muted"> · ${esc(m.role)}</span><p class="mono chan">${esc(m.channel)}</p></div></div>
+          <div class="chat-msgs">
+            <div class="msg-in">
+              <div class="bubble"><button class="audio-btn" data-speak="${esc(m.text)}" aria-label="Escuchar">${ICON.play}</button><p lang="en" class="speak-target">${esc(m.text)}</p></div>
+              <button class="btn btn-quiet sm-btn" data-chat-es>Ver traducción</button>
+              <p class="reveal-es" hidden>${esc(m.es)}</p>
+            </div>
+            ${picked !== null ? `<div class="msg-out"><div class="bubble mine"><p lang="en">${esc(m.replies[picked].en)}</p></div></div>` : ""}
+          </div>
+          <div class="chat-compose">
+            <p class="label">${picked === null ? "¿Cómo responderías?" : "Las respuestas"}</p>
+            <div class="options">
+              ${order.map((k, n) => {
+                const r = m.replies[k];
+                const cls = picked === null ? "" : ` rate-${r.rate}${k === picked ? " picked" : ""}`;
+                return `<div class="reply${cls}">
+                  <button class="option" data-chat-pick="${k}" ${picked !== null ? "disabled" : ""} lang="en"><span class="key" aria-hidden="true">${n + 1}</span><span>${esc(r.en)}</span></button>
+                  ${picked !== null ? `<div class="reply-why"><span class="rate-tag">${RATE[r.rate]}</span> ${esc(r.why)}
+                    <span class="reply-tools"><button class="btn btn-quiet sm-btn" data-speak="${esc(r.en)}">${ICON.play} Escuchar</button>${r.rate !== "avoid" ? `<button class="btn btn-quiet sm-btn" data-copy="${esc(r.en)}">Copiar</button>` : ""}</span></div>` : ""}
+                </div>`;
+              }).join("")}
+            </div>
+            ${picked !== null ? `<div class="btn-row chat-next"><button class="btn btn-primary" data-chat-next>Siguiente mensaje ${ICON.chev}</button></div>` : ""}
+          </div>
+        </section>
+      </div>`;
+  }
+
+  app.addEventListener("click", e => {
+    if (L) return;
+    const o = e.target.closest("[data-chat-open]");
+    if (o) { chatState.i = +o.dataset.chatOpen; chatState.pick = null; renderChat(); const p = $(".chat-pane"); if (p && window.innerWidth < 860) p.scrollIntoView({ block: "start" }); return; }
+    const p = e.target.closest("[data-chat-pick]");
+    if (p && chatState.pick === null) {
+      chatState.pick = +p.dataset.chatPick;
+      const done = new Set(store.get("chatDone", [])); done.add(chatState.i); store.set("chatDone", [...done]);
+      const r = CHAT[chatState.i].replies[chatState.pick];
+      if (r.rate !== "avoid") { prog.xp += r.rate === "best" ? 5 : 2; prog.log[dayKey()] = (prog.log[dayKey()] || 0) + 1; saveProg(); renderStats(); }
+      renderChat();
+      const nx = $("[data-chat-next]"); if (nx) nx.focus({ preventScroll: true });
+      return;
+    }
+    if (e.target.closest("[data-chat-next]")) { chatState.i = (chatState.i + 1) % CHAT.length; chatState.pick = null; renderChat(); window.scrollTo({ top: 0 }); return; }
+    if (e.target.closest("[data-chat-es]")) { const r = $(".chat-pane .reveal-es"); if (r) r.hidden = !r.hidden; }
   });
 
   /* ── Chuletas ── */
@@ -1299,6 +1452,7 @@ cd: no such file or directory</pre>
     { c: "daily", d: "Preparar mi daily" },
     { c: "pronounce", d: "Pronunciación de términos técnicos" },
     { c: "cheats", d: "Chuletas para copiar" },
+    { c: "chat", d: "Chat del equipo: responder mensajes" },
     ...ROUTES.filter(r => r.units.length).map(r => ({ c: `route ${r.id}`, d: r.title })),
     ...LESSONS.map(l => ({ c: `lesson ${l.id}`, d: `${l.unit.title} · ${l.title}` })),
     { c: "theme dark", d: "Tema azul noche" },
@@ -1335,6 +1489,7 @@ cd: no such file or directory</pre>
       case "review": location.hash = "#/l/review"; break;
       case "home": if (L) leaveLesson("#/"); else location.hash = "#/"; break;
       case "route": location.hash = `#/r/${arg}`; break;
+      case "chat": if (L) leaveLesson("#/chat"); else location.hash = "#/chat"; break;
       case "daily": case "pronounce": case "cheats":
         if (L) leaveLesson(`#/${verb === "pronounce" ? "say" : verb}`); else location.hash = `#/${verb === "pronounce" ? "say" : verb}`; break;
       case "lesson": location.hash = `#/l/${arg}`; break;
@@ -1383,12 +1538,13 @@ cd: no such file or directory</pre>
     if (L && view !== "l") { L = null; document.body.classList.remove("in-lesson"); }
     stopAudio();
     renderStats();
-    const navKey = ["say", "daily", "cheats"].includes(view) ? view : (["", "r", "l"].includes(view || "") ? "learn" : null);
+    const navKey = ["say", "daily", "cheats", "chat"].includes(view) ? view : (["", "r", "l"].includes(view || "") ? "learn" : null);
     $$(".nav a").forEach(a => { if (a.dataset.nav === navKey) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     if (view === "l" && (lessonById[id] || id === "review")) startLesson(id);
     else if (view === "r") renderRoute(id);
     else if (view === "say") renderSay();
-    else if (view === "daily") renderDailyBuilder();
+    else if (view === "daily") (id === "build" ? renderDailyBuilder : renderDailyGuide)();
+    else if (view === "chat") renderChat();
     else if (view === "cheats") renderCheats();
     else if (view === "man") renderMan();
     else if (view && view !== "") render404(h);
